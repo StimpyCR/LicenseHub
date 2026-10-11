@@ -1,0 +1,7 @@
+{
+  "type": "urn:licensehub:problem:idempotency_conflict",
+  "title": "La clave idempotente ya fue utilizada con otra solicitud",
+  "status": 409,
+  "code": "idempotency_conflict",
+  "traceId": "example-trace-001"
+}

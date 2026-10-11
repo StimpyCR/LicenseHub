@@ -1,0 +1,12 @@
+# Compatibilidad API v1 / LicenseHub.SDK
+
+El SDK se desarrolla y publica en un repositorio NuGet independiente. Fuente de verdad: `openapi/licensehub-v1.yaml`; versión documental inicial 1.0.0, estado draft hasta validación. No generar SDK en este repositorio.
+
+- `/api/v1` permanece estable. Cambiar tipos, semántica, enums cerrados, campos requeridos, seguridad o eliminar campos/endpoints requiere `/api/v2`. Añadir campos opcionales de respuesta es compatible para lectores tolerantes; añadir estados requiere nueva versión. Nuevos feature codes y warning codes son strings extensibles.
+- SDK ignora propiedades desconocidas de respuesta, preserva códigos de error desconocidos y nunca autoriza ante estados desconocidos. JSON camelCase, UUID strings, fechas RFC3339 UTC, enums case-sensitive. Fechas null son explícitas; Lifetime se determina por isLifetime, no solo fecha null.
+- HttpClientFactory, CancellationToken en todas las operaciones, sin .Result/.Wait. Cancelación HTTP no garantiza rollback del servidor. POST activate conserva Idempotency-Key y cuerpo entre reintentos. GET reintenta 429/503 con Retry-After, jitter y presupuesto limitado. No reintentar 400/401/403/404. 409 idempotency_in_progress admite retry; otros conflictos se exponen tipados. Nunca registrar licenseKey ni credential.
+- Errores `application/problem+json`: code estable, status HTTP coherente, traceId, errors opcional. Presentar license_unavailable sin revelar dueño ni existencia en otra aplicación. Cachear únicamente snapshots válidos y nunca ampliar cacheUntil; fail closed al vencer. Un replay de activación no es comprobación actual de derechos.
+- El backend consumidor determina subjectId tras autenticar usuario y negocio. No tomar subjectId o customerId arbitrario de la petición del navegador. customerId devuelto por LicenseHub es informativo y queda dentro de su aplicación.
+- Pruebas compartidas: serialización, ausencia de licencia, dos minutos, lifetime, 409 replay incompatible, 429, cancelación, feature denegada, subject cruzado y credencial revocada. La API entrega contrato y fixtures; el SDK ejecuta tests contra implementación y PostgreSQL antes de declarar compatibilidad.
+
+Ejemplo de flujo: StockMini obtiene negocio `business-42` de su sesión; su backend canjea clave con subjectId `business-42` e Idempotency-Key UUID; consulta status/features antes de autorizar `/reports/premium`. Clientes instalados solo reciben resultados mínimos de StockMini.
