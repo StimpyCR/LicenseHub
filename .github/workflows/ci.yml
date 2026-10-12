@@ -20,7 +20,7 @@ jobs:
           --health-interval 5s --health-timeout 5s --health-retries 20
     env:
       LICENSEHUB_TEST_CONNECTION: Host=127.0.0.1;Database=licensehub_tests;Username=licensehub_test;Password=${{ github.run_id }}-${{ github.run_attempt }}
-      LICENSEHUB_CONTRACT_RESULTS_DIR: .tooling/contract-results
+      LICENSEHUB_CONTRACT_RESULTS_DIR: ${{ github.workspace }}/.tooling/contract-results
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
