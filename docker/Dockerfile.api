@@ -1,0 +1,16 @@
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /source
+COPY global.json Directory.Build.props ./
+COPY backend/ backend/
+COPY contracts/openapi/ contracts/openapi/
+RUN dotnet restore backend/src/LicenseHub.Api/LicenseHub.Api.csproj --locked-mode
+RUN dotnet publish backend/src/LicenseHub.Api/LicenseHub.Api.csproj -c Release --no-restore -o /app
+
+FROM mcr.microsoft.com/dotnet/aspnet:10.0
+WORKDIR /app
+COPY --from=build /app ./
+RUN mkdir /app/.keys && chown $APP_UID /app/.keys
+USER $APP_UID
+EXPOSE 8080
+ENV ASPNETCORE_HTTP_PORTS=8080
+ENTRYPOINT ["dotnet", "LicenseHub.Api.dll"]

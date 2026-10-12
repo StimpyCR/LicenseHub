@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/LicenseHub.Api/LicenseHub.Api.csproj" />
+    <Project Path="src/LicenseHub.Application/LicenseHub.Application.csproj" />
+    <Project Path="src/LicenseHub.Domain/LicenseHub.Domain.csproj" />
+    <Project Path="src/LicenseHub.Infrastructure/LicenseHub.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/LicenseHub.IntegrationTests/LicenseHub.IntegrationTests.csproj" />
+    <Project Path="tests/LicenseHub.SecurityTests/LicenseHub.SecurityTests.csproj" />
+    <Project Path="tests/LicenseHub.UnitTests/LicenseHub.UnitTests.csproj" />
+  </Folder>
+</Solution>

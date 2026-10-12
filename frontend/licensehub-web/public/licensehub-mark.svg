@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="LicenseHub">
+  <rect width="64" height="64" rx="16" fill="#153b60"/>
+  <path d="M18 17h8v27h20v7H18z" fill="#eef5fb"/>
+  <circle cx="44" cy="23" r="8" fill="#58d0ba"/>
+</svg>

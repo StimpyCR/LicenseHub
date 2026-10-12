@@ -1,0 +1,12 @@
+.git
+.venv
+.tooling
+.secrets
+**/.keys
+**/node_modules
+**/dist
+**/bin
+**/obj
+*.pfx
+*.pem
+.env

@@ -1,0 +1,53 @@
+<mat-toolbar>
+  <img src="licensehub-mark.svg" alt="" width="36" height="36" />
+  <span class="brand">LicenseHub</span>
+  <span class="spacer"></span>
+  <button mat-button (click)="darkMode.set(!darkMode())" [attr.aria-pressed]="darkMode()">
+    {{ darkMode() ? 'Modo claro' : 'Modo oscuro' }}
+  </button>
+</mat-toolbar>
+<main>
+  <div class="eyebrow">ADMINISTRACIÓN PRIVADA</div>
+  <h1>Tus aplicaciones.<br />Un solo centro de licencias.</h1>
+  <p class="intro">Administra el acceso Premium de tus aplicaciones desde un espacio seguro.</p>
+  <div class="cards">
+    <mat-card appearance="outlined">
+      <mat-card-header
+        ><mat-card-title>Disponibilidad del servicio</mat-card-title></mat-card-header
+      >
+      <mat-card-content>
+        <p class="status" role="status" aria-live="polite">
+          <span class="dot" [class.ready]="availability() === 'ready'"></span>
+          @switch (availability()) {
+            @case ('ready') {
+              Servicio disponible
+            }
+            @case ('unavailable') {
+              Servicio no disponible
+            }
+            @default {
+              Comprobando disponibilidad…
+            }
+          }
+        </p>
+        <p>Consulta la conexión actual antes de comenzar.</p>
+        <mat-slide-toggle [formControl]="autoRefresh">Actualizar cada 30 segundos</mat-slide-toggle>
+      </mat-card-content>
+      <mat-card-actions
+        ><button mat-stroked-button (click)="refresh()">Comprobar ahora</button></mat-card-actions
+      >
+    </mat-card>
+    <mat-card appearance="outlined">
+      <mat-card-header><mat-card-title>Acceso administrativo</mat-card-title></mat-card-header>
+      <mat-card-content>
+        <app-admin-login />
+        <p>El panel está en desarrollo.</p>
+        <p>
+          La administración de aplicaciones, clientes y licencias se habilitará cuando esos módulos
+          estén implementados y verificados.
+        </p>
+      </mat-card-content>
+    </mat-card>
+  </div>
+  <footer>LicenseHub · Acceso administrativo privado</footer>
+</main>

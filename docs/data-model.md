@@ -29,6 +29,9 @@ Customer representa una cuenta/negocio de una aplicación; contacto repetido ent
 ```mermaid
 erDiagram
   Users ||--o{ ApplicationUserGrants : tiene
+  Users ||--o{ AdminAuthChallenges : desafia
+  Users ||--o{ AdminSessions : autentica
+  Users ||--o{ AdminMfaUses : impide_replay
   Applications ||--o{ ApplicationUserGrants : permite
   Applications ||--o{ ApplicationCredentials : autentica
   Applications ||--o{ Customers : aisla
@@ -53,4 +56,7 @@ Generar no otorga derechos. Inicio al emitir fija StartsAt/ExpiresAt pero perman
 
 ## Migraciones planificadas
 
-001 Identity/aplicaciones/permisos/credenciales; 002 clientes/catálogo/licencias/activaciones; 003 renovaciones/pagos/idempotencia; 004 notificaciones/outbox/auditoría; Hangfire esquema propio. EF migrations reales y SQL revisado se crean en fase 2, no se presentan como ya implementadas. Verificar restricciones con PostgreSQL real, nunca sustituir concurrencia por EF InMemory. Ensayar upgrade desde base vacía y desde snapshot anterior con respaldo restaurable.
+Fase 2 consolidó las entidades diseñadas en una migración inicial `20261011161920_InitialSchema`; Hangfire conserva esquema separado, pendiente de provisionamiento en fase 7. EF generó migración y snapshot reales; `docker/migrations.sql` es el script idempotente con trigger append-only de auditoría. Los registros de persistencia viven en Infrastructure y no son DTOs del SDK. ApplicationFeatures/LicenseFeatures/NotificationSettings tienen UUID técnico como PK y claves/índices únicos compuestos para preservar la unicidad lógica descrita arriba. Verificar restricciones con PostgreSQL real, nunca sustituir concurrencia por EF InMemory. Ensayar upgrade desde base vacía y desde snapshot anterior con respaldo restaurable. Migración inicial y migración AdminAuthentication aplicadas localmente contra PostgreSQL 17 real.
+
+Fase 3 añade AdminAuthChallenges (Id, UserId, SecurityStamp, ExpiresAt, ConsumedAt), AdminSessions (Id, UserId, SecurityStamp, ExpiresAt, RevokedAt) y AdminMfaUses (PK UserId/TokenHash, ExpiresAt). FK restrictivas a Users e índices de expiración. Bloqueo PostgreSQL por usuario serializa login, consumo MFA y logout. Los registros de auth no contienen contraseñas ni códigos en claro; el almacén estándar Identity conserva la clave de autenticador según su modelo. Limpieza de registros expirados pendiente de mantenimiento persistente.
+

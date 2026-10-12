@@ -1,0 +1,9 @@
+FROM mcr.microsoft.com/dotnet/sdk:10.0
+WORKDIR /source
+COPY global.json Directory.Build.props ./
+COPY backend/ backend/
+COPY contracts/openapi/ contracts/openapi/
+RUN dotnet restore backend/LicenseHub.slnx --locked-mode
+RUN dotnet build backend/LicenseHub.slnx -c Release --no-restore -m:1 -p:UseSharedCompilation=false
+ENTRYPOINT ["dotnet", "test", "--no-build", "--no-restore", "--configuration", "Release"]
+CMD ["backend/LicenseHub.slnx"]

@@ -63,9 +63,17 @@ def main():
                 continue
             operations.append(operation["operationId"])
             if path.startswith("/api/v1/admin/"):
-                requirement = operation["security"][0]
-                if "AdminSession" not in requirement:
+                requirements = operation["security"]
+                if path == "/api/v1/admin/auth/csrf":
+                    if method != "get" or requirements:
+                        raise ValueError("CSRF seed debe ser GET anónimo")
+                    continue
+                requirement = requirements[0]
+                auth_exception = path in {"/api/v1/admin/auth/login", "/api/v1/admin/auth/mfa"}
+                if not auth_exception and "AdminSession" not in requirement:
                     raise ValueError("Operación administrativa sin sesión")
+                if path == "/api/v1/admin/auth/mfa" and "MfaChallenge" not in requirement:
+                    raise ValueError("MFA sin challenge autenticado")
                 if method != "get" and "CsrfToken" not in requirement:
                     raise ValueError("Mutación administrativa sin CSRF")
     if len(operations) != len(set(operations)):

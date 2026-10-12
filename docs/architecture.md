@@ -46,12 +46,16 @@ Outbox PostgreSQL y Hangfire PostgreSQL: publicar trabajos después del commit y
 
 ## Operación y seguridad
 
-Problem Details centralizado sin stack traces; correlationId seguro. Validación server-side de tamaños, enumeraciones y combinaciones. EF parametrizado; no SQL interpolado. Angular escapa texto y no usa bypassSecurityTrustHtml para contenido administrativo. CSP, HSTS en producción y confianza en forwarded headers limitada al proxy configurado. Rate limits por aplicación/credencial, principal e IP; activación más estricta. Identity lockout, respuestas genéricas y MFA mitigan fuerza bruta.
+Problem Details centralizado sin stack traces; correlationId seguro. Validación server-side de tamaños, enumeraciones y combinaciones. EF y SQL parametrizados; no concatenar entradas en SQL. Angular escapa texto y no usa bypassSecurityTrustHtml para contenido administrativo. CSP, HSTS en producción y confianza en forwarded headers limitada al proxy configurado. Rate limits por aplicación/credencial, principal e IP; activación más estricta. Identity lockout, respuestas genéricas y MFA mitigan fuerza bruta.
 
 Auditoría append-only con usuario/principal, aplicación, acción, objeto, motivo y correlationId; redactar PII sensible y secretos. Cuenta SQL del runtime sin DDL; migraciones con identidad separada. Backup cifrado con claves en secret manager, retención definida por operación y restauración periódica en entorno aislado. No afirmar restauración probada hasta ejecutarla. Hangfire dashboard cerrado por defecto o restringido a SuperAdmin con MFA.
 
-CI de fase 2: restore locked, build, xUnit con PostgreSQL real/Testcontainers, build Angular, lint, validación OpenAPI y ejemplos, comparación semántica con contrato publicado, escaneo NuGet/npm y análisis estático. No despliegue automático de producción. Antes de publicación: pruebas concurrentes, BOLA, cookies/CSRF/MFA, credenciales revocadas, expiración de dos minutos y restauración.
+CI de fase 2: restore locked, build, xUnit con PostgreSQL real, build Angular, lint, validación OpenAPI y ejemplos, comparación semántica con contrato publicado, escaneo NuGet/npm y análisis estático. No despliegue automático de producción. Antes de publicación: pruebas concurrentes, BOLA, cookies/CSRF/MFA, credenciales revocadas, expiración de dos minutos y restauración.
 
 ## Puerta de salida de Fase 1
 
 Contrato revisado, parser OpenAPI 3.1 ejecutado, ejemplos validados y decisiones aceptadas; no iniciar implementación con errores críticos. El 11 de octubre de 2026 el validador local terminó con salida 0 para estructura OpenAPI, referencias y cuatro ejemplos. Sigue pendiente revisión semántica y validación con el generador C# elegido. El SDK puede comenzar diseño de modelos y pruebas desde el contrato, pero no publicar un paquete como compatible antes de esta puerta.
+
+Implementación administrativa fase 3: Application define IAdminAuthentication; Infrastructure coordina Identity, bloqueo por usuario, replay MFA, sesiones y auditoría transaccional; Api adapta cookies y antiforgery. Ventana MFA y política de sesiones en docs/admin-authentication.md. Las capacidades agregadas de Session son solo vista de UI, no una autorización cruzada entre aplicaciones.
+
+
