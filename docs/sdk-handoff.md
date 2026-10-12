@@ -44,7 +44,7 @@ Antes de publicar v1, validar con generador C# elegido: oneOf, null OpenAPI 3.1 
 
 ## Administración disponible
 
-Implementados login/MFA/CSRF/sesión/logout y listado/creación/edición de aplicaciones, emisión/listado/revocación de credenciales. El esquema de integración resuelve aplicación/scopes desde PostgreSQL. Licencias, clientes, catálogo Premium, pagos, notificaciones, auditoría consultable, dashboard y CSV siguen pendientes.
+Implementados login/MFA/CSRF/sesión/logout y listado/creación/edición de aplicaciones, emisión/listado/revocación de credenciales. El esquema de integración resuelve aplicación/scopes desde PostgreSQL. Catálogo Premium implementado con permisos por aplicación e idempotencia. Licencias, clientes, pagos, notificaciones, auditoría consultable, dashboard y CSV siguen pendientes.
 
 Rotación: emitir nueva credencial, instalar/probar en backend y revocar anterior, con coexistencia/expiración explícita. Se muestra secreto una vez; replay de emisión responde 409 secret_not_recoverable. No hay registro público ni borrado de historial. Exportación futura neutralizará fórmulas CSV y respetará permisos/PII.
 

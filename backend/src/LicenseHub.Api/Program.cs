@@ -21,7 +21,12 @@ using Microsoft.EntityFrameworkCore;
 using Serilog;
 
 var bootstrapMode = args.Contains("--bootstrap-admin", StringComparer.Ordinal);
-var builder = WebApplication.CreateBuilder(args.Where(argument => argument != "--bootstrap-admin").ToArray());
+var recoveryMode = args.Contains("--recover-admin", StringComparer.Ordinal);
+var maintenanceMode = args.Contains("--cleanup-auth", StringComparer.Ordinal);
+var provisionJobsMode = args.Contains("--provision-jobs", StringComparer.Ordinal);
+if (new[] { bootstrapMode, recoveryMode, maintenanceMode, provisionJobsMode }.Count(mode => mode) > 1)
+    throw new InvalidOperationException("Selecciona una sola operación administrativa privada.");
+var builder = WebApplication.CreateBuilder(args.Where(argument => argument is not "--bootstrap-admin" and not "--recover-admin" and not "--cleanup-auth" and not "--provision-jobs").ToArray());
 builder.Host.UseSerilog((_, configuration) => configuration.MinimumLevel.Information()
     .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning).WriteTo.Console());
 var connectionFile = builder.Configuration["ConnectionStrings:LicenseHubFile"];
@@ -32,6 +37,8 @@ builder.Services.AddDbContext<LicenseHubDbContext>(options => options.UseNpgsql(
 builder.Services.AddScoped<IStorageAvailability, PostgresAvailability>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<ISuperAdminBootstrap, SuperAdminBootstrap>();
+builder.Services.AddScoped<IAdminRecovery, AdminRecovery>();
+builder.Services.AddScoped<IAuthMaintenance, AuthMaintenance>();
 builder.Services.AddScoped<IAdminAuthentication, AdminAuthentication>();
 builder.Services.AddScoped<IIntegrationAuthentication, IntegrationAuthentication>();
 builder.Services.AddScoped<IApplicationAccess, ApplicationAccess>();
@@ -163,14 +170,48 @@ else
         protection.ProtectKeysWithCertificate(certificate);
     }
 }
-if (builder.Configuration.GetValue<bool>("Jobs:Enabled"))
+if (builder.Configuration.GetValue<bool>("Jobs:Enabled") || provisionJobsMode)
 {
     builder.Services.AddHangfire(configuration => configuration.UseSimpleAssemblyNameTypeSerializer()
         .UseRecommendedSerializerSettings().UsePostgreSqlStorage(options => options.UseNpgsqlConnection(connection),
-            new PostgreSqlStorageOptions { SchemaName = "hangfire", PrepareSchemaIfNecessary = false }));
+            new PostgreSqlStorageOptions { SchemaName = "hangfire", PrepareSchemaIfNecessary = provisionJobsMode }));
     builder.Services.AddHangfireServer();
 }
 var app = builder.Build();
+if (provisionJobsMode)
+{
+    try
+    {
+        _ = app.Services.GetRequiredService<JobStorage>();
+        app.Services.GetRequiredService<IRecurringJobManager>().AddOrUpdate<IAuthMaintenance>("auth-cleanup",
+            maintenance => maintenance.CleanupAsync(CancellationToken.None), Cron.Hourly(), new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
+        app.Services.GetRequiredService<IBackgroundJobClient>().Enqueue<IAuthMaintenance>(maintenance => maintenance.CleanupAsync(CancellationToken.None));
+        Console.WriteLine("Almacenamiento Hangfire provisionado; limpieza registrada y encolada.");
+        Environment.ExitCode = 0;
+    }
+    catch { Console.Error.WriteLine("jobs_provision_failed"); Environment.ExitCode = 1; }
+    await app.DisposeAsync();
+    return;
+}
+if (maintenanceMode)
+{
+    try
+    {
+        await using var scope = app.Services.CreateAsyncScope();
+        await scope.ServiceProvider.GetRequiredService<IAuthMaintenance>().CleanupAsync(CancellationToken.None);
+        Console.WriteLine("Limpieza de autenticación completada.");
+        Environment.ExitCode = 0;
+    }
+    catch { Console.Error.WriteLine("auth_cleanup_failed"); Environment.ExitCode = 1; }
+    await app.DisposeAsync();
+    return;
+}
+if (recoveryMode)
+{
+    Environment.ExitCode = await RecoveryCommand.RunAsync(app.Services, app.Configuration, CancellationToken.None);
+    await app.DisposeAsync();
+    return;
+}
 if (bootstrapMode)
 {
     Environment.ExitCode = await BootstrapCommand.RunAsync(app.Services, app.Configuration, CancellationToken.None);
@@ -206,6 +247,9 @@ app.UseSerilogRequestLogging();
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
+if (builder.Configuration.GetValue<bool>("Jobs:Enabled"))
+    app.Services.GetRequiredService<IRecurringJobManager>().AddOrUpdate<IAuthMaintenance>("auth-cleanup",
+        maintenance => maintenance.CleanupAsync(CancellationToken.None), Cron.Hourly(), new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
 app.MapAdminAuth();
 app.MapApplicationManagement();
 app.MapHealthChecks("/health/live", new() { Predicate = _ => false }).AllowAnonymous();

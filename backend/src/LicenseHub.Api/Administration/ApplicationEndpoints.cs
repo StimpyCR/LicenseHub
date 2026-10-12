@@ -9,6 +9,20 @@ public static class ApplicationEndpoints
     {
         var group = app.MapGroup("/api/v1/admin").RequireAuthorization("AdminSession")
             .AddEndpointFilter<ManagementErrorFilter>();
+        group.MapGet("/applications/{id:guid}/features", async (Guid id, string? cursor, int? pageSize, IApplicationManagement service, HttpContext context) =>
+            Results.Ok(await service.FeaturesAsync(Actor(context), id, cursor, pageSize ?? 25, context.RequestAborted)));
+        group.MapPost("/applications/{id:guid}/features", async (Guid id, FeatureWrite request, IApplicationManagement service, HttpContext context) =>
+        {
+            var result = await service.SaveFeatureAsync(Actor(context), id, null, Key(context), null, request, context.TraceIdentifier, context.RequestAborted);
+            context.Response.Headers.ETag = result.Etag;
+            return Results.Json(result, statusCode: 201);
+        }).AddEndpointFilter<AdminCsrfFilter>();
+        group.MapPut("/applications/{id:guid}/features/{code}", async (Guid id, string code, FeatureWrite request, IApplicationManagement service, HttpContext context) =>
+        {
+            var result = await service.SaveFeatureAsync(Actor(context), id, code, Key(context), Match(context), request, context.TraceIdentifier, context.RequestAborted);
+            context.Response.Headers.ETag = result.Etag;
+            return Results.Ok(result);
+        }).AddEndpointFilter<AdminCsrfFilter>();
         group.MapGet("/applications", async (string? cursor, int? pageSize, IApplicationManagement service, HttpContext context) =>
             Results.Ok(await service.ListAsync(Actor(context), cursor, pageSize ?? 25, context.RequestAborted)));
         group.MapPost("/applications", async (ApplicationWrite request, IApplicationManagement service, HttpContext context) =>

@@ -17,3 +17,5 @@ Desafío: cinco minutos. Sesión: 30 minutos sin renovación. Replay: tres minut
 El diseño añade coste de lectura de PostgreSQL a cada solicitud administrativa y falla cerrado si no puede validar la sesión. No se usa caché de autorización administrativa. Las capacidades agregadas no autorizan combinaciones arbitrarias de aplicaciones/permisos. La autenticación de integración tendrá su propio esquema y se implementará por separado.
 
 La limpieza de registros expirados, recuperación del autenticador, gestión de otros administradores y permisos de endpoints de negocio quedan pendientes. Ninguno de esos endpoints se habilita con respuestas simuladas. Se conserva contrato SDK v1; se elimina del draft administrativo la excepción Development sin MFA antes de implementar endpoints.
+
+Actualización: recuperación operativa y limpieza persistente implementadas y verificadas localmente. Ver ADR 0006 y auth-maintenance.md. Administración de otros usuarios y autorización de futuros endpoints de licencias siguen pendientes.

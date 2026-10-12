@@ -913,7 +913,7 @@ paths:
       tags:
       - Administration
       operationId: listApplicationFeatures
-      description: Catálogo aislado por aplicación.
+      description: Catálogo aislado por aplicación; permiso features:read o SuperAdmin.
       security:
       - AdminSession: []
       responses:

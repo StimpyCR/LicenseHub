@@ -7,6 +7,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { finalize, switchMap, timeout } from 'rxjs';
+import { ApplicationDetails } from './application-details';
 
 interface ApplicationView {
   id: string;
@@ -24,12 +25,16 @@ interface ApplicationView {
     MatFormFieldModule,
     MatInputModule,
     MatCheckboxModule,
+    ApplicationDetails,
   ],
   template: `
     <h3>Aplicaciones</h3>
     <button mat-button [disabled]="busy()" (click)="load()">Actualizar lista</button>
     @for (app of applications(); track app.id) {
       <p>{{ app.name }} · {{ app.slug }} · {{ app.isActive ? 'Activa' : 'Inactiva' }}</p>
+      <button mat-button [disabled]="busy()" (click)="details.set(app)">
+        Credenciales y funcionalidades
+      </button>
       @if (canManage()) {
         <button mat-stroked-button [disabled]="busy()" (click)="edit(app)">Editar</button>
       }
@@ -61,6 +66,13 @@ interface ApplicationView {
     @if (message()) {
       <p role="status">{{ message() }}</p>
     }
+    @if (details(); as app) {
+      <h3>{{ app.name }}</h3>
+      <button mat-button (click)="details.set(null)">Cerrar detalles</button>
+      @defer (on immediate) {
+        <app-application-details [applicationId]="app.id" />
+      }
+    }
   `,
   styles: `
     form {
@@ -79,6 +91,7 @@ export class ApplicationManager {
   private readonly http = inject(HttpClient);
   private readonly destroyRef = inject(DestroyRef);
   protected readonly applications = signal<ApplicationView[]>([]);
+  protected readonly details = signal<ApplicationView | null>(null);
   protected readonly cursor = signal<string | null>(null);
   protected readonly selected = signal<ApplicationView | null>(null);
   protected readonly busy = signal(false);

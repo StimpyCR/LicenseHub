@@ -66,6 +66,10 @@ public sealed class ApplicationManagementTests
         var deniedRevoke = await Assert.ThrowsAsync<ManagementException>(() => service.RevokeAsync(Guid.NewGuid(),
             issued.Credential.Id, Guid.NewGuid(), revoked.Etag, new("Unauthorized"), "test", default));
         Assert.Equal(404, deniedRevoke.Status);
+        fixture.Clock.Advance(TimeSpan.FromHours(2));
+        var expiredReplay = await Assert.ThrowsAsync<ManagementException>(() => service.IssueAsync(grant.View.UserId,
+            app.Id, key, request, "test", default));
+        Assert.Equal("secret_not_recoverable", expiredReplay.Code);
         Assert.Empty((await service.ListAsync(Guid.NewGuid(), null, 25, default)).Items);
         var denied = await Assert.ThrowsAsync<ManagementException>(() => service.CredentialsAsync(Guid.NewGuid(), app.Id, null, 25, default));
         Assert.Equal(404, denied.Status);
@@ -94,6 +98,10 @@ public sealed class ApplicationManagementTests
         var app = await response.Content.ReadFromJsonAsync<ApplicationView>();
         Assert.Equal(app!.Etag, response.Headers.ETag!.ToString());
         Assert.Equal(HttpStatusCode.PreconditionRequired, (await client.PutAsJsonAsync("/api/v1/admin/applications/" + app.Id, request)).StatusCode);
+        var feature = await client.PostAsJsonAsync("/api/v1/admin/applications/" + app.Id + "/features", new FeatureWrite("reports", "Reports", true));
+        Assert.Equal(HttpStatusCode.Created, feature.StatusCode);
+        var catalog = await client.GetFromJsonAsync<FeaturePage>("/api/v1/admin/applications/" + app.Id + "/features");
+        Assert.Equal("reports", Assert.Single(catalog!.Items).Code);
     }
 
     private static async Task<AdminSessionGrant> LoginAsync(AdminAuthenticationTests.AuthFixture fixture)

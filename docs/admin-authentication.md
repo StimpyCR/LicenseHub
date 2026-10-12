@@ -21,7 +21,7 @@ Los endpoints adaptan transporte, cookies y antiforgery; Application define el c
 
 La migración `AdminAuthentication` añade AdminAuthChallenges, AdminMfaUses y AdminSessions con FK restrictiva a Identity e índices de expiración. Auditoría conserva eventos login/challenge/MFA/logout. Los registros expirados pueden limpiarse en tareas de mantenimiento futuras; no confieren acceso después de su fecha aunque sigan almacenados. Hasta implementar esa limpieza persistente, monitorizar crecimiento y aplicar una política operativa revisada. No eliminar usos MFA aún vigentes.
 
-La clave TOTP permanece en el almacén estándar Identity, protegido por privilegios/cifrado de almacenamiento y backups. DataProtection protege cookies, no cifra automáticamente ese campo. Recuperación del autenticador, rotación de la clave y administración de otros usuarios aún no están implementadas. El operador inicializó su cuenta mediante el flujo privado y confirmó el acceso; no se publican credenciales.
+La clave TOTP permanece en el almacén estándar Identity, protegido por privilegios/cifrado de almacenamiento y backups. DataProtection protege cookies, no cifra automáticamente ese campo. Recuperación y rotación operativa de SuperAdmin disponibles mediante [CLI privada](admin-recovery.md); administración de otros usuarios y recuperación autoservicio pendientes. Ver [limpieza y programación](auth-maintenance.md). El operador inicializó su cuenta mediante el flujo privado y confirmó el acceso; no se publican credenciales.
 
 ## Verificación ejecutada
 

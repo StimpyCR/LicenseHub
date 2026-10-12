@@ -78,10 +78,10 @@ public sealed class ApplicationManagement(LicenseHubDbContext db, UserManager<Ad
         await AllowedAsync(actor, id, "credentials:manage", ct);
         var now = clock.GetUtcNow();
         if (request.Scopes is not { Length: > 0 and <= 3 } || request.Scopes.Any(x => !IntegrationScopes.IsValid(x))
-            || request.Scopes.Distinct().Count() != request.Scopes.Length || request.ExpiresAt.Offset != TimeSpan.Zero
-            || request.ExpiresAt <= now || request.ExpiresAt > now.AddDays(365)) throw Error(400);
+            || request.Scopes.Distinct().Count() != request.Scopes.Length || request.ExpiresAt.Offset != TimeSpan.Zero) throw Error(400);
         return await MutateAsync(actor, key, "credential.issue:" + id, request, true, () =>
         {
+            if (request.ExpiresAt <= now || request.ExpiresAt > now.AddDays(365)) throw Error(400);
             var secret = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)).TrimEnd('=').Replace('+', '-').Replace('/', '_');
             var row = new ApplicationCredentialRow
             {
@@ -117,6 +117,54 @@ public sealed class ApplicationManagement(LicenseHubDbContext db, UserManager<Ad
             return (row.ApplicationId, View(row));
         }, ct);
     }
+
+    public async Task<FeaturePage> FeaturesAsync(Guid actor, Guid id, string? cursor, int pageSize, CancellationToken ct)
+    {
+        await AllowedAsync(actor, id, "features:read", ct);
+        var offset = Offset(cursor, pageSize);
+        var rows = await db.Set<ApplicationFeatureRow>().AsNoTracking().Where(x => x.ApplicationId == id)
+            .OrderBy(x => x.Code).Skip(offset).Take(pageSize + 1).ToListAsync(ct);
+        return new(rows.Take(pageSize).Select(View).ToArray(), Next(rows.Count, offset, pageSize));
+    }
+
+    public async Task<FeatureView> SaveFeatureAsync(Guid actor, Guid id, string? code, Guid key, string? etag,
+        FeatureWrite request, string trace, CancellationToken ct)
+    {
+        await AllowedAsync(actor, id, "features:manage", ct);
+        if (request.Code is null || !Regex.IsMatch(request.Code, "\\A[a-z][a-z0-9._-]{0,63}\\z", RegexOptions.CultureInvariant)
+            || string.IsNullOrWhiteSpace(request.Name) || request.Name.Length > 120 || (code is not null && code != request.Code)) throw Error(400);
+        return await MutateAsync(actor, key, "feature." + (code is null ? "create:" : "update:") + id + ":" + request.Code,
+            new { request, etag }, false, async () =>
+            {
+                ApplicationFeatureRow row;
+                if (code is null)
+                {
+                    row = new()
+                    {
+                        Id = Guid.NewGuid(),
+                        ApplicationId = id,
+                        CreatedAt = clock.GetUtcNow(),
+                        Version = 1,
+                        Code = request.Code,
+                        Name = request.Name,
+                        IsActive = request.IsActive
+                    };
+                    db.Add(row);
+                }
+                else
+                {
+                    row = await db.Set<ApplicationFeatureRow>().SingleOrDefaultAsync(x => x.ApplicationId == id && x.Code == code, ct) ?? throw Error(404);
+                    Match(row.Version, etag ?? "");
+                    row.Name = request.Name;
+                    row.IsActive = request.IsActive;
+                    row.Version++;
+                }
+                Audit(actor, id, row.Id, code is null ? "feature.created" : "feature.updated", trace);
+                return (id, View(row));
+            }, ct);
+    }
+
+    private static FeatureView View(ApplicationFeatureRow row) => new(row.ApplicationId, row.Code, row.Name, row.IsActive, Tag(row.Version));
 
     private async Task<T> MutateAsync<T>(Guid actor, Guid key, string operation, object request, bool secret,
         Func<Task<(Guid ApplicationId, T Value)>> change, CancellationToken ct)

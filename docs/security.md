@@ -16,7 +16,7 @@ Los clientes web/móviles nunca incluyen credenciales de integración. La API co
 
 Las pruebas actuales verifican transporte y metadatos de restricciones. El análisis de dependencias no es un pentest. La matriz SDK/BOLA/concurrencia de fases posteriores sigue pendiente.
 
-Bootstrap verificado con PostgreSQL: ante MFA inválido no persisten usuarios; dos intentos concurrentes crean exactamente un SuperAdmin y un evento de auditoría. No existe registro HTTP. El almacén estándar Identity conserva la clave TOTP en la base: requiere proteger almacenamiento, backups y privilegios; DataProtection no cifra ese token automáticamente. La prevención persistente de replay en login está implementada; recuperación del autenticador sigue pendiente.
+Bootstrap verificado con PostgreSQL: ante MFA inválido no persisten usuarios; dos intentos concurrentes crean exactamente un SuperAdmin y un evento de auditoría. No existe registro HTTP. El almacén estándar Identity conserva la clave TOTP en la base: requiere proteger almacenamiento, backups y privilegios; DataProtection no cifra ese token automáticamente. La prevención persistente de replay en login está implementada; recuperación operativa del autenticador implementada como CLI privada, con verificación de nueva clave y auditoría (admin-recovery.md).
 
 
 Login nunca emite sesión sin MFA. Las cookies se contrastan con sesiones persistentes y SecurityStamp en cada solicitud; logout revoca su registro. TOTP usado se retiene tres minutos y challenge se consume bajo bloqueo de usuario. Contraseña acertada no borra fallos MFA. Rate limits específicos y límite de cuerpo auth 8 KiB complementan lockout. No existe bypass MFA de Development.

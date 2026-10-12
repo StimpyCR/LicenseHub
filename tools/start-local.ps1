@@ -41,6 +41,8 @@ try {
     Get-Content -LiteralPath 'docker/migrations.sql' -Raw |
         & $dockerExe @composeArgs exec -T postgres psql -U licensehub_local -d licensehub -v ON_ERROR_STOP=1 --quiet
     if ($LASTEXITCODE -ne 0) { throw 'Falló la migración; no se arrancarán API/web.' }
+    # Provisionamiento explícito para desarrollo; runtime no realiza DDL de Hangfire.
+    Invoke-Docker @composeArgs run --rm --no-deps api --provision-jobs
     Invoke-Docker @composeArgs up -d --wait
     Write-Host 'LicenseHub local: https://localhost:8443'
     Write-Host 'Certificado de desarrollo: usa dotnet dev-certs https --trust si aún no es confiable.'

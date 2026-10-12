@@ -24,7 +24,7 @@ services:
       ConnectionStrings__LicenseHubFile: /run/secrets/db_connection
       DataProtection__KeyPath: /app/.keys
       TrustedProxies__0: 172.29.87.10
-      Jobs__Enabled: "false"
+      Jobs__Enabled: "true"
     secrets: [db_connection]
     volumes: [data-protection:/app/.keys]
     depends_on:

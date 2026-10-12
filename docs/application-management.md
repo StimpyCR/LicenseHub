@@ -1,6 +1,6 @@
 # Administración de aplicaciones y credenciales
 
-Este incremento de fase 4 implementa listado paginado, creación y edición de aplicaciones, activación/desactivación, listado de credenciales, emisión y revocación. El formulario Angular permite registrar y editar aplicaciones al SuperAdmin; los administradores delegados solo ven las aplicaciones con `applications:read`. La interfaz de gestión de credenciales y el catálogo Premium siguen pendientes.
+Implementados listado paginado, creación/edición y activación/desactivación de aplicaciones, emisión/listado/revocación de credenciales y catálogo Premium. Angular permite registrar/editar aplicaciones y, desde «Credenciales y funcionalidades», emitir/revocar credenciales, crear/editar/desactivar funcionalidades y paginar listados. Los administradores delegados solo ven aplicaciones con applications:read; cada operación se autoriza nuevamente en el servidor.
 
 Todas las rutas requieren sesión Identity con MFA; las mutaciones requieren CSRF e Idempotency-Key UUID no vacío. SuperAdmin crea/edita aplicaciones. Las credenciales exigen `credentials:read` o `credentials:manage` sobre su aplicación real. Recursos ajenos devuelven 404. `slug` es único e inmutable; nombre admite entre 1 y 120 caracteres y no puede ser solo espacios.
 
@@ -15,3 +15,7 @@ Expiración de credenciales debe ser UTC, futura y no superior a 365 días. Scop
 Listados usan pageSize 1–100, predeterminado 25, y nextCursor. El cursor de este incremento codifica un desplazamiento decimal validado; no es una autorización ni una instantánea. Altas concurrentes pueden cambiar páginas; recargar el listado para confirmar estado. Las aplicaciones se ordenan por slug, las credenciales por CreatedAt/Id.
 
 Pruebas sobre PostgreSQL aislado verifican creación única con reintentos concurrentes, conflicto de payload, versiones antiguas, emisión sin secreto persistido/replay, revocación y rechazo de acceso ajeno. Una prueba HTTP verifica sesión/MFA/CSRF, campos obligatorios, idempotencia, ETag y If-Match. No se crearon aplicaciones o credenciales reales del operador automáticamente.
+
+Catálogo: features:read/features:manage sobre la aplicación real; código único e inmutable, nombre no vacío hasta 120 caracteres, ETag para editar e idempotencia para crear/editar. Un mismo código en otra aplicación es un recurso independiente. No se borra historial. Desactivar una funcionalidad actualizará los derechos efectivos cuando se implementen los endpoints de licencias; todavía no se emiten snapshots Premium reales.
+
+El secreto emitido se conserva solo en memoria del componente, nunca localStorage, sessionStorage, PWA ni logs. Se oculta al cerrar detalles o cambiar de aplicación. Copiarlo al gestor de secretos antes de cerrar; si se pierde la respuesta, la recuperación está prohibida y se debe revocar/emitar otra. Las respuestas de una aplicación anterior no se muestran en la seleccionada actualmente.

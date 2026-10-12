@@ -1,6 +1,6 @@
 # LicenseHub
 
-Estado: seguridad de fase 3 implementada con recuperación administrativa pendiente; fase 4 en curso. Backend con persistencia, migraciones, bootstrap privado, login/MFA/sesiones y gestión de aplicaciones/credenciales. Frontend Angular Material/PWA con acceso y formulario de aplicaciones. Los endpoints de licencias siguen pendientes. No hay SDK en este repositorio ni despliegue productivo.
+Estado: prioridades de fases 3–4 implementadas; revisión final de flujos administrativos en curso. Backend con persistencia, bootstrap, login/MFA/sesiones, recuperación privada, limpieza persistente y gestión de aplicaciones/credenciales/catálogo. Frontend Angular Material/PWA con formularios administrativos. Licencias pendientes; no hay SDK aquí ni despliegue productivo.
 
 ## Entregables
 
@@ -55,5 +55,5 @@ La [autenticación de integración](docs/integration-authentication.md) incorpor
 
 ## Gestión de aplicaciones
 
-Ver [operaciones, idempotencia y rotación](docs/application-management.md). Listado/creación/edición de aplicaciones disponibles en el panel. API de emisión/listado/revocación de credenciales implementada; su interfaz y catálogo Premium pendientes. Verificación de este incremento (12 de octubre de 2026): 11 pruebas de integración PostgreSQL y 8 de seguridad pasadas; contrato/compatibilidad, formato C#, lint/build Angular correctos. Las 16 pruebas unitarias previas no cambiaron ni se repitieron.
+Ver [operaciones, idempotencia y rotación](docs/application-management.md). Listado/creación/edición de aplicaciones, interfaz de emisión/listado/revocación de credenciales y catálogo Premium disponibles. Recuperación y rotación operativa de SuperAdmin mediante [CLI privada](docs/admin-recovery.md); [limpieza de autenticación](docs/auth-maintenance.md) implementada, tarea horaria persistente habilitada y verificada en Hangfire local. Verificación del incremento (12 de octubre de 2026): 15 pruebas de integración PostgreSQL y 8 de seguridad pasadas; contrato/compatibilidad, formato C#, lint/build Angular correctos. Build Angular avisa 502.20 kB frente al presupuesto inicial de 500 kB, sin error. Las 16 pruebas unitarias previas no cambiaron ni se repitieron.
 

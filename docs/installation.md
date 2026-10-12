@@ -39,7 +39,7 @@ dotnet run --project backend/src/LicenseHub.Api --launch-profile https
 
 Backend usa https://localhost:7276 y certificado confiable. /health/live comprueba proceso; /health/ready exige conexión y migraciones aplicadas. Solo sondas aceptan HTTP. Otras rutas lo rechazan antes de aceptar secretos. /openapi/v1.yaml se sirve solo en Development. No hay registro público.
 
-Bootstrap privado, login/MFA, CSRF, sesiones, esquema Bearer, permisos por aplicación y gestión de aplicaciones/credenciales están implementados. Licencias siguen pendientes. Hangfire Jobs__Enabled=false por defecto: no habilitar antes de provisionar esquema/tareas de fase 7. El runtime requiere permisos mínimos; el usuario amplio de Compose no es apropiado para producción.
+Bootstrap privado, login/MFA, CSRF, sesiones, esquema Bearer, permisos por aplicación y gestión de aplicaciones/credenciales están implementados. Licencias siguen pendientes. El arranque local provisiona Hangfire mediante --provision-jobs y habilita la limpieza horaria; runtime sin DDL automático. Producción requiere provisionamiento separado. Notificaciones y outbox siguen pendientes de fase 7. El runtime requiere permisos mínimos; el usuario amplio de Compose no es apropiado para producción.
 
 ## Frontend
 
