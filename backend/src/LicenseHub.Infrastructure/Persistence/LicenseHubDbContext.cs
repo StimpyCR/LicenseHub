@@ -12,6 +12,7 @@ public sealed class LicenseHubDbContext(DbContextOptions<LicenseHubDbContext> op
     protected override void OnModelCreating(ModelBuilder model)
     {
         base.OnModelCreating(model);
+        model.Entity<AdminUser>().Property(x => x.AccessVersion).IsConcurrencyToken();
         var adminChallenges = model.Entity<AdminChallengeRow>();
         adminChallenges.ToTable("AdminAuthChallenges");
         adminChallenges.HasKey(x => x.Id);

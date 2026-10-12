@@ -213,7 +213,7 @@ public sealed class ApplicationManagement(LicenseHubDbContext db, UserManager<Ad
     private async Task<bool> IsSuperAsync(Guid actor)
     {
         var user = await users.FindByIdAsync(actor.ToString());
-        return user is not null && user.TwoFactorEnabled && !await users.IsLockedOutAsync(user) && await users.IsInRoleAsync(user, "SuperAdmin");
+        return user is not null && !user.IsDisabled && user.TwoFactorEnabled && !await users.IsLockedOutAsync(user) && await users.IsInRoleAsync(user, "SuperAdmin");
     }
     private async Task SuperAsync(Guid actor) { if (!await IsSuperAsync(actor)) throw Error(403); }
     private async Task AllowedAsync(Guid actor, Guid id, string capability, CancellationToken ct)

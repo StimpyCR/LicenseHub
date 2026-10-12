@@ -1,12 +1,13 @@
 param(
     [Parameter(Mandatory)][Guid]$UserId,
     [Parameter(Mandatory)][string]$Email,
-    [Parameter(Mandatory)][string]$Reason
+    [Parameter(Mandatory)][string]$Reason,
+    [ValidateSet('Recovery', 'Enrollment')][string]$Mode = 'Recovery'
 )
 $ErrorActionPreference = 'Stop'
 [System.Net.Mail.MailAddress]$parsedEmail = $null
 if ($UserId -eq [Guid]::Empty -or $Email.Length -gt 254 -or ![System.Net.Mail.MailAddress]::TryCreate($Email, [ref]$parsedEmail) -or $parsedEmail.Address -ne $Email -or [string]::IsNullOrWhiteSpace($Reason) -or $Reason.Length -gt 1000) { throw 'Datos inválidos.' }
-$privateDir = Join-Path (Split-Path $PSScriptRoot -Parent) '.secrets/recovery'
+$privateDir = Join-Path (Split-Path $PSScriptRoot -Parent) ('.secrets/' + $Mode.ToLowerInvariant())
 $inputFile = Join-Path $privateDir 'admin.json'
 if (Test-Path $inputFile) { throw 'Ya existe preparación privada de recuperación. No se sobrescribirá.' }
 New-Item -ItemType Directory -Path $privateDir -Force | Out-Null
@@ -22,7 +23,8 @@ $bytes = [Security.Cryptography.RandomNumberGenerator]::GetBytes(20)
 $bits = -join ($bytes | ForEach-Object { [Convert]::ToString($_, 2).PadLeft(8, '0') })
 $alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'
 $key = -join (0..31 | ForEach-Object { $alphabet[[Convert]::ToInt32($bits.Substring($_ * 5, 5), 2)] })
-$request = @{ userId = $UserId.ToString(); email = $Email; confirmation = "RECOVER:$UserId"; reason = $Reason;
+$operationPrefix = if ($Mode -eq 'Enrollment') { 'ENROLL' } else { 'RECOVER' }
+$request = @{ userId = $UserId.ToString(); email = $Email; confirmation = "${operationPrefix}:$UserId"; reason = $Reason;
     password = 'aA1!' + [Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(32)); authenticatorKey = $key; code = '' }
 [IO.File]::WriteAllText($inputFile, ($request | ConvertTo-Json))
 if (!$IsWindows) {

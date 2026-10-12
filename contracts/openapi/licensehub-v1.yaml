@@ -471,7 +471,8 @@ paths:
       tags:
       - Administration
       operationId: createApplication
-      description: SuperAdmin; slug único inmutable. Reintentos con la misma Idempotency-Key y cuerpo devuelven el resultado original; otro cuerpo devuelve 409.
+      description: SuperAdmin; slug único inmutable. Reintentos con la misma Idempotency-Key y cuerpo devuelven
+        el resultado original; otro cuerpo devuelve 409.
       security:
       - AdminSession: []
         CsrfToken: []
@@ -2056,17 +2057,141 @@ paths:
                 type: string
                 enum:
                 - Unhealthy
+  /api/v1/admin/users:
+    get:
+      tags:
+      - Administration
+      operationId: listAdminUsers
+      description: Solo SuperAdmin. Perfiles sin secretos, paginados; incluye estado MFA y permisos emparejados.
+      security:
+      - AdminSession: []
+      parameters:
+      - $ref: '#/components/parameters/Cursor'
+      - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Solo SuperAdmin. Perfiles sin secretos, paginados; incluye estado MFA y permisos emparejados.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUserPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+    post:
+      tags:
+      - Administration
+      operationId: createAdminUser
+      description: Solo SuperAdmin. Crea cuenta pendiente, sin password ni MFA ni permisos. Misma key/email devuelve
+        perfil actual sin duplicar; key con otro email devuelve 409. Enrolamiento CLI privado, no registro público.
+      security:
+      - AdminSession: []
+        CsrfToken: []
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '201':
+          description: Solo SuperAdmin. Crea cuenta pendiente, sin password ni MFA ni permisos. Misma key/email
+            devuelve perfil actual sin duplicar; key con otro email devuelve 409. Enrolamiento CLI privado, no registro
+            público.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUserProfile'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminUserCreate'
+  /api/v1/admin/users/{id}:
+    put:
+      tags:
+      - Administration
+      operationId: updateAdminUserAccess
+      description: Solo SuperAdmin. Reemplaza permisos y suspensión de administrador delegado; prohíbe modificar
+        SuperAdmin. Versionado If-Match, auditoría e invalidación de sesiones/desafíos. No elimina usuarios ni asigna
+        roles globales.
+      security:
+      - AdminSession: []
+        CsrfToken: []
+      parameters:
+      - $ref: '#/components/parameters/Id'
+      - $ref: '#/components/parameters/IfMatch'
+      responses:
+        '200':
+          description: Solo SuperAdmin. Reemplaza permisos y suspensión de administrador delegado; prohíbe modificar
+            SuperAdmin. Versionado If-Match, auditoría e invalidación de sesiones/desafíos. No elimina usuarios
+            ni asigna roles globales.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUserProfile'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+        '412':
+          $ref: '#/components/responses/PreconditionFailed'
+        '428':
+          $ref: '#/components/responses/PreconditionRequired'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminUserAccessWrite'
 components:
   securitySchemes:
     IntegrationCredential:
       type: http
       scheme: bearer
       bearerFormat: opaque-application-credential
-      description: 'Secreto opaco de backend: 32 bytes aleatorios codificados base64url sin padding
-        (43 caracteres). Se almacena únicamente SHA-256. Aplicación y scopes se resuelven
-        en servidor en cada solicitud, sin caché de autenticación. Credencial expirada,
-        revocada o de aplicación inactiva devuelve 401; scope insuficiente devuelve 403.
-        Solo Authorization Bearer; no se aceptan secretos en URL ni cookies. No es JWT.'
+      description: 'Secreto opaco de backend: 32 bytes aleatorios codificados base64url sin padding (43 caracteres).
+        Se almacena únicamente SHA-256. Aplicación y scopes se resuelven en servidor en cada solicitud, sin caché
+        de autenticación. Credencial expirada, revocada o de aplicación inactiva devuelve 401; scope insuficiente
+        devuelve 403. Solo Authorization Bearer; no se aceptan secretos en URL ni cookies. No es JWT.'
     AdminSession:
       type: apiKey
       in: cookie
@@ -3312,3 +3437,94 @@ components:
         customers:
           type: integer
           minimum: 0
+    AdminUserGrant:
+      type: object
+      additionalProperties: false
+      required:
+      - applicationId
+      - capability
+      properties:
+        applicationId:
+          type: string
+          format: uuid
+        capability:
+          type: string
+          enum:
+          - applications:read
+          - credentials:read
+          - credentials:manage
+          - features:read
+          - features:manage
+    AdminUserCreate:
+      type: object
+      additionalProperties: false
+      required:
+      - email
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+    AdminUserAccessWrite:
+      type: object
+      additionalProperties: false
+      required:
+      - isDisabled
+      - grants
+      - reason
+      properties:
+        isDisabled:
+          type: boolean
+        grants: &id001
+          type: array
+          maxItems: 100
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/AdminUserGrant'
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 1000
+    AdminUserProfile:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - email
+      - isDisabled
+      - mfaEnrolled
+      - isSuperAdmin
+      - etag
+      - grants
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        isDisabled:
+          type: boolean
+        mfaEnrolled:
+          type: boolean
+        isSuperAdmin:
+          type: boolean
+        etag:
+          type: string
+          pattern: ^"[0-9]+"$
+        grants: *id001
+    AdminUserPage:
+      type: object
+      additionalProperties: false
+      required:
+      - items
+      - nextCursor
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminUserProfile'
+        nextCursor:
+          type:
+          - string
+          - 'null'

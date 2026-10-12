@@ -8,6 +8,16 @@ namespace LicenseHub.SecurityTests;
 public sealed class TransportSecurityTests
 {
     [Fact]
+    public async Task IsolatedUiTestHostDoesNotReplaceNormalAntiforgeryCookie()
+    {
+        await using var factory = CreateFactory().WithWebHostBuilder(builder => builder.UseSetting("Testing:CookiePrefix", "LicenseHubUiSmoke"));
+        using var client = factory.CreateClient(new() { BaseAddress = new Uri("https://localhost") });
+        var response = await client.GetAsync("/api/v1/admin/auth/csrf");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains(response.Headers.GetValues("Set-Cookie"), value => value.StartsWith("__Host-LicenseHubUiSmokeCsrf=", StringComparison.Ordinal));
+        Assert.DoesNotContain(response.Headers.GetValues("Set-Cookie"), value => value.StartsWith("__Host-LicenseHubCsrf=", StringComparison.Ordinal));
+    }
+    [Fact]
     public async Task LoginRateLimitsRequestsBeforeDatabaseAccess()
     {
         await using var factory = CreateFactory();

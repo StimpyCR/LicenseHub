@@ -22,11 +22,16 @@ using Serilog;
 
 var bootstrapMode = args.Contains("--bootstrap-admin", StringComparer.Ordinal);
 var recoveryMode = args.Contains("--recover-admin", StringComparer.Ordinal);
+var enrollmentMode = args.Contains("--enroll-admin", StringComparer.Ordinal);
 var maintenanceMode = args.Contains("--cleanup-auth", StringComparer.Ordinal);
 var provisionJobsMode = args.Contains("--provision-jobs", StringComparer.Ordinal);
-if (new[] { bootstrapMode, recoveryMode, maintenanceMode, provisionJobsMode }.Count(mode => mode) > 1)
+if (new[] { bootstrapMode, recoveryMode, enrollmentMode, maintenanceMode, provisionJobsMode }.Count(mode => mode) > 1)
     throw new InvalidOperationException("Selecciona una sola operación administrativa privada.");
-var builder = WebApplication.CreateBuilder(args.Where(argument => argument is not "--bootstrap-admin" and not "--recover-admin" and not "--cleanup-auth" and not "--provision-jobs").ToArray());
+var builder = WebApplication.CreateBuilder(args.Where(argument => argument is not "--bootstrap-admin" and not "--recover-admin" and not "--enroll-admin" and not "--cleanup-auth" and not "--provision-jobs").ToArray());
+// Separate cookies for an isolated UI test host on another localhost port.
+var cookiePrefix = builder.Environment.IsEnvironment("Testing") ? builder.Configuration["Testing:CookiePrefix"] ?? "LicenseHub" : "LicenseHub";
+if (!System.Text.RegularExpressions.Regex.IsMatch(cookiePrefix, "\\A[A-Za-z0-9]{1,32}\\z"))
+    throw new InvalidOperationException("Prefijo de cookies de prueba inválido.");
 builder.Host.UseSerilog((_, configuration) => configuration.MinimumLevel.Information()
     .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning).WriteTo.Console());
 var connectionFile = builder.Configuration["ConnectionStrings:LicenseHubFile"];
@@ -37,7 +42,10 @@ builder.Services.AddDbContext<LicenseHubDbContext>(options => options.UseNpgsql(
 builder.Services.AddScoped<IStorageAvailability, PostgresAvailability>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<ISuperAdminBootstrap, SuperAdminBootstrap>();
-builder.Services.AddScoped<IAdminRecovery, AdminRecovery>();
+builder.Services.AddScoped<AdminRecovery>();
+builder.Services.AddScoped<IAdminRecovery>(provider => provider.GetRequiredService<AdminRecovery>());
+builder.Services.AddScoped<IAdminEnrollment>(provider => provider.GetRequiredService<AdminRecovery>());
+builder.Services.AddScoped<IAdminUsers, AdminUsers>();
 builder.Services.AddScoped<IAuthMaintenance, AuthMaintenance>();
 builder.Services.AddScoped<IAdminAuthentication, AdminAuthentication>();
 builder.Services.AddScoped<IIntegrationAuthentication, IntegrationAuthentication>();
@@ -62,7 +70,7 @@ builder.Services.AddAuthentication()
         IntegrationAuthenticationHandler.SchemeName, _ => { })
     .AddCookie(AdminAuthEndpoints.ChallengeScheme, options =>
 {
-    options.Cookie.Name = "__Host-LicenseHubChallenge";
+    options.Cookie.Name = "__Host-" + cookiePrefix + "Challenge";
     options.Cookie.Path = "/";
     options.Cookie.HttpOnly = true;
     options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
@@ -72,7 +80,7 @@ builder.Services.AddAuthentication()
 });
 builder.Services.ConfigureApplicationCookie(options =>
 {
-    options.Cookie.Name = "__Host-LicenseHub";
+    options.Cookie.Name = "__Host-" + cookiePrefix;
     options.Cookie.Path = "/";
     options.Cookie.HttpOnly = true;
     options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
@@ -99,7 +107,7 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddAntiforgery(options =>
 {
     options.HeaderName = "X-CSRF-TOKEN";
-    options.Cookie.Name = "__Host-LicenseHubCsrf";
+    options.Cookie.Name = "__Host-" + cookiePrefix + "Csrf";
     options.Cookie.Path = "/";
     options.Cookie.HttpOnly = true;
     options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
@@ -206,9 +214,9 @@ if (maintenanceMode)
     await app.DisposeAsync();
     return;
 }
-if (recoveryMode)
+if (recoveryMode || enrollmentMode)
 {
-    Environment.ExitCode = await RecoveryCommand.RunAsync(app.Services, app.Configuration, CancellationToken.None);
+    Environment.ExitCode = await RecoveryCommand.RunAsync(app.Services, app.Configuration, CancellationToken.None, enrollmentMode);
     await app.DisposeAsync();
     return;
 }
@@ -251,6 +259,7 @@ if (builder.Configuration.GetValue<bool>("Jobs:Enabled"))
     app.Services.GetRequiredService<IRecurringJobManager>().AddOrUpdate<IAuthMaintenance>("auth-cleanup",
         maintenance => maintenance.CleanupAsync(CancellationToken.None), Cron.Hourly(), new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
 app.MapAdminAuth();
+app.MapAdminUsers();
 app.MapApplicationManagement();
 app.MapHealthChecks("/health/live", new() { Predicate = _ => false }).AllowAnonymous();
 app.MapHealthChecks("/health/ready", new() { Predicate = registration => registration.Tags.Contains("ready") }).AllowAnonymous();

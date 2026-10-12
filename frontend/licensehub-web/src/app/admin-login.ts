@@ -7,6 +7,7 @@ import { MatInputModule } from '@angular/material/input';
 import { finalize } from 'rxjs';
 import { AdminAuthService, AdminSession } from './admin-auth.service';
 import { ApplicationManager } from './application-manager';
+import { AdminUserManager } from './admin-user-manager';
 
 @Component({
   selector: 'app-admin-login',
@@ -16,6 +17,7 @@ import { ApplicationManager } from './application-manager';
     MatFormFieldModule,
     MatInputModule,
     ApplicationManager,
+    AdminUserManager,
   ],
   template: `
     @if (session(); as current) {
@@ -24,6 +26,11 @@ import { ApplicationManager } from './application-manager';
       <button mat-stroked-button [disabled]="busy()" (click)="logout()">Cerrar sesión</button>
       @defer (on immediate) {
         <app-application-manager [canManage]="current.capabilities.includes('superadmin')" />
+      }
+      @if (current.capabilities.includes('superadmin')) {
+        @defer (on immediate) {
+          <app-admin-user-manager />
+        }
       }
     } @else if (challenge()) {
       <p>Introduce el código de seis dígitos de tu autenticador.</p>

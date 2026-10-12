@@ -1,7 +1,13 @@
-import { Component, DestroyRef, inject, input, signal } from '@angular/core';
+import { Component, DestroyRef, inject, input, signal, viewChild } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  FormControl,
+  FormGroup,
+  FormGroupDirective,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -46,7 +52,7 @@ interface ApplicationView {
     }
     @if (canManage()) {
       <h3>{{ selected() ? 'Editar aplicación' : 'Registrar aplicación' }}</h3>
-      <form [formGroup]="form" (ngSubmit)="save()">
+      <form #applicationFormDirective="ngForm" [formGroup]="form" (ngSubmit)="save()">
         <mat-form-field
           ><mat-label>Nombre</mat-label><input matInput formControlName="name" maxlength="120"
         /></mat-form-field>
@@ -90,6 +96,9 @@ export class ApplicationManager {
   readonly canManage = input(false);
   private readonly http = inject(HttpClient);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly applicationFormDirective = viewChild<FormGroupDirective>(
+    'applicationFormDirective',
+  );
   protected readonly applications = signal<ApplicationView[]>([]);
   protected readonly details = signal<ApplicationView | null>(null);
   protected readonly cursor = signal<string | null>(null);
@@ -139,7 +148,9 @@ export class ApplicationManager {
   protected reset() {
     this.selected.set(null);
     this.form.controls.slug.enable();
-    this.form.reset({ name: '', slug: '', isActive: true });
+    const values = { name: '', slug: '', isActive: true };
+    if (this.applicationFormDirective()) this.applicationFormDirective()!.resetForm(values);
+    else this.form.reset(values);
     this.attempt = null;
   }
   protected save() {

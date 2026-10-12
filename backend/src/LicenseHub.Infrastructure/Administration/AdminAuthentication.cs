@@ -31,7 +31,12 @@ public sealed class AdminAuthentication(LicenseHubDbContext db, UserManager<Admi
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
         await LockUserAsync(user.Id, cancellationToken);
         await db.Entry(user).ReloadAsync(cancellationToken);
-        if (await users.IsLockedOutAsync(user)) throw Denied();
+        if (user.IsDisabled || await users.IsLockedOutAsync(user))
+        {
+            DummyHasher.VerifyHashedPassword(DummyUser, DummyHash, request.Password);
+            throw Denied();
+        }
+        if (user.PasswordHash is null) DummyHasher.VerifyHashedPassword(DummyUser, DummyHash, request.Password);
         if (!await users.CheckPasswordAsync(user, request.Password) || !user.TwoFactorEnabled || !await HasAdminAccessAsync(user))
         {
             Ensure(await users.AccessFailedAsync(user));
@@ -66,7 +71,7 @@ public sealed class AdminAuthentication(LicenseHubDbContext db, UserManager<Admi
         var challenge = await db.Set<AdminChallengeRow>().SingleOrDefaultAsync(x => x.Id == challengeId, cancellationToken);
         var now = clock.GetUtcNow();
         if (user is null || challenge is null || challenge.ConsumedAt is not null || challenge.ExpiresAt <= now
-            || challenge.SecurityStamp != user.SecurityStamp || !user.TwoFactorEnabled
+            || challenge.SecurityStamp != user.SecurityStamp || user.IsDisabled || !user.TwoFactorEnabled
             || await users.IsLockedOutAsync(user) || !await HasAdminAccessAsync(user)) throw Denied();
         var tokenHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(user.Id.ToString("N") + ":" + request.Code)));
         var previous = await db.Set<AdminMfaUseRow>().SingleOrDefaultAsync(x => x.UserId == user.Id && x.TokenHash == tokenHash, cancellationToken);
@@ -104,7 +109,7 @@ public sealed class AdminAuthentication(LicenseHubDbContext db, UserManager<Admi
         var session = await db.Set<AdminSessionRow>().AsNoTracking().SingleOrDefaultAsync(x => x.Id == sessionId && x.UserId == userId, cancellationToken);
         if (session is null || session.RevokedAt is not null || session.ExpiresAt <= clock.GetUtcNow()) return null;
         var user = await db.Users.SingleOrDefaultAsync(x => x.Id == userId, cancellationToken);
-        if (user is null || session.SecurityStamp != user.SecurityStamp || !user.TwoFactorEnabled
+        if (user is null || user.IsDisabled || session.SecurityStamp != user.SecurityStamp || !user.TwoFactorEnabled
             || await users.IsLockedOutAsync(user) || !await HasAdminAccessAsync(user)) return null;
         return await CreateGrantAsync(session, user, cancellationToken);
     }

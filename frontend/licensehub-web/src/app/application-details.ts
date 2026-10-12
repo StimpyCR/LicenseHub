@@ -1,7 +1,13 @@
-import { Component, DestroyRef, effect, inject, input, signal } from '@angular/core';
+import { Component, DestroyRef, effect, inject, input, signal, viewChild } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  FormControl,
+  FormGroup,
+  FormGroupDirective,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -99,7 +105,7 @@ interface Page<T> {
         Más funcionalidades
       </button>
     }
-    <form [formGroup]="featureForm" (ngSubmit)="saveFeature()">
+    <form #featureFormDirective="ngForm" [formGroup]="featureForm" (ngSubmit)="saveFeature()">
       <mat-form-field
         ><mat-label>Código inmutable</mat-label
         ><input matInput formControlName="code" maxlength="64"
@@ -138,6 +144,7 @@ export class ApplicationDetails {
   readonly applicationId = input.required<string>();
   private readonly http = inject(HttpClient);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly featureFormDirective = viewChild<FormGroupDirective>('featureFormDirective');
   protected readonly credentials = signal<Credential[]>([]);
   protected readonly features = signal<Feature[]>([]);
   protected readonly credentialCursor = signal<string | null>(null);
@@ -276,7 +283,9 @@ export class ApplicationDetails {
   protected newFeature() {
     this.selectedFeature = null;
     this.featureForm.controls.code.enable();
-    this.featureForm.reset({ code: '', name: '', isActive: true });
+    const values = { code: '', name: '', isActive: true };
+    if (this.featureFormDirective()) this.featureFormDirective()!.resetForm(values);
+    else this.featureForm.reset(values);
   }
   protected saveFeature() {
     if (this.featureForm.invalid || this.busy()) return;

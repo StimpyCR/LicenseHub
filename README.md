@@ -57,3 +57,7 @@ La [autenticación de integración](docs/integration-authentication.md) incorpor
 
 Ver [operaciones, idempotencia y rotación](docs/application-management.md). Listado/creación/edición de aplicaciones, interfaz de emisión/listado/revocación de credenciales y catálogo Premium disponibles. Recuperación y rotación operativa de SuperAdmin mediante [CLI privada](docs/admin-recovery.md); [limpieza de autenticación](docs/auth-maintenance.md) implementada, tarea horaria persistente habilitada y verificada en Hangfire local. Verificación del incremento (12 de octubre de 2026): 15 pruebas de integración PostgreSQL y 8 de seguridad pasadas; contrato/compatibilidad, formato C#, lint/build Angular correctos. Build Angular avisa 502.20 kB frente al presupuesto inicial de 500 kB, sin error. Las 16 pruebas unitarias previas no cambiaron ni se repitieron.
 
+
+## Administradores delegados
+
+Ver [gestión y enrolamiento privado](docs/admin-users.md). Creación pendiente, permisos por aplicación y suspensión disponibles para SuperAdmin. Recuperación privada conserva roles/permisos y rechaza cuentas suspendidas. Verificadas 18 pruebas de integración y 9 de seguridad en este incremento, además del contrato y revisión visual con datos aislados. Próxima fase: clientes y licencias; todavía no se ofrecen sus operaciones.

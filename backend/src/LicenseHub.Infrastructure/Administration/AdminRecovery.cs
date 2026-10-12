@@ -8,11 +8,13 @@ using Microsoft.EntityFrameworkCore;
 namespace LicenseHub.Infrastructure.Administration;
 
 // Privileged offline operation. Never register a public recovery endpoint for this service.
-public sealed class AdminRecovery(LicenseHubDbContext db, UserManager<AdminUser> users, TimeProvider clock) : IAdminRecovery
+public sealed class AdminRecovery(LicenseHubDbContext db, UserManager<AdminUser> users, TimeProvider clock) : IAdminRecovery, IAdminEnrollment
 {
-    public async Task RecoverAsync(AdminRecoveryRequest request, string operatorId, CancellationToken cancellationToken)
+    public Task RecoverAsync(AdminRecoveryRequest request, string operatorId, CancellationToken cancellationToken) => ConfigureAsync(request, operatorId, true, cancellationToken);
+    public Task EnrollAsync(AdminRecoveryRequest request, string operatorId, CancellationToken cancellationToken) => ConfigureAsync(request, operatorId, false, cancellationToken);
+    private async Task ConfigureAsync(AdminRecoveryRequest request, string operatorId, bool recovery, CancellationToken cancellationToken)
     {
-        if (request.UserId == Guid.Empty || request.Confirmation != "RECOVER:" + request.UserId
+        if (request.UserId == Guid.Empty || request.Confirmation != (recovery ? "RECOVER:" : "ENROLL:") + request.UserId
             || string.IsNullOrWhiteSpace(request.Email) || request.Email.Length > 254
             || string.IsNullOrWhiteSpace(request.Reason) || request.Reason.Length > 1000
             || string.IsNullOrWhiteSpace(operatorId) || operatorId.Length > 128
@@ -23,8 +25,11 @@ public sealed class AdminRecovery(LicenseHubDbContext db, UserManager<AdminUser>
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
         await db.Database.ExecuteSqlInterpolatedAsync($"SELECT 1 FROM \"AspNetUsers\" WHERE \"Id\" = {request.UserId} FOR UPDATE", cancellationToken);
         var user = await db.Users.SingleOrDefaultAsync(x => x.Id == request.UserId, cancellationToken);
-        if (user is null || !string.Equals(user.Email, request.Email, StringComparison.OrdinalIgnoreCase)
-            || !await users.IsInRoleAsync(user, SuperAdminBootstrap.RoleName))
+        if (user is null || !string.Equals(user.Email, request.Email, StringComparison.OrdinalIgnoreCase) || user.IsDisabled)
+            throw new InvalidOperationException("recovery_target_rejected");
+        var superAdmin = await users.IsInRoleAsync(user, SuperAdminBootstrap.RoleName);
+        var delegatedAdmin = user.TwoFactorEnabled && await db.Set<ApplicationUserGrantRow>().AnyAsync(x => x.UserId == user.Id, cancellationToken);
+        if (recovery ? !superAdmin && !delegatedAdmin : superAdmin || user.TwoFactorEnabled)
             throw new InvalidOperationException("recovery_target_rejected");
         if (await users.GetAuthenticatorKeyAsync(user) == request.AuthenticatorKey)
             throw new InvalidOperationException("recovery_new_key_required");
@@ -35,6 +40,7 @@ public sealed class AdminRecovery(LicenseHubDbContext db, UserManager<AdminUser>
         var token = await users.GeneratePasswordResetTokenAsync(user);
         Ensure(await users.ResetPasswordAsync(user, token, request.Password));
         Ensure(await users.SetTwoFactorEnabledAsync(user, true));
+        user.AccessVersion++;
         Ensure(await users.SetLockoutEndDateAsync(user, null));
         Ensure(await users.ResetAccessFailedCountAsync(user));
         Ensure(await users.UpdateSecurityStampAsync(user));
@@ -46,7 +52,7 @@ public sealed class AdminRecovery(LicenseHubDbContext db, UserManager<AdminUser>
             Id = Guid.NewGuid(),
             ActorId = operatorId,
             EntityId = user.Id,
-            Action = "admin.recovered",
+            Action = recovery ? "admin.recovered" : "admin.enrolled",
             Reason = request.Reason,
             CorrelationId = Guid.NewGuid().ToString(),
             CreatedAt = now

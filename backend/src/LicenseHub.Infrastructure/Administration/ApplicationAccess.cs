@@ -12,7 +12,7 @@ public sealed class ApplicationAccess(LicenseHubDbContext db, UserManager<AdminU
     {
         if (userId == Guid.Empty || applicationId == Guid.Empty || string.IsNullOrWhiteSpace(capability)) return false;
         var user = await users.FindByIdAsync(userId.ToString());
-        if (user is null || !user.TwoFactorEnabled || await users.IsLockedOutAsync(user)) return false;
+        if (user is null || user.IsDisabled || !user.TwoFactorEnabled || await users.IsLockedOutAsync(user)) return false;
         if (await users.IsInRoleAsync(user, "SuperAdmin")) return true;
         return await db.Set<ApplicationUserGrantRow>().AsNoTracking().AnyAsync(
             grant => grant.UserId == userId && grant.ApplicationId == applicationId && grant.Capability == capability,
