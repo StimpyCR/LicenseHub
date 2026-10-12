@@ -7,6 +7,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { finalize, switchMap, timeout } from 'rxjs';
+import { LicenseLifecycle, ManagedLicense } from './license-lifecycle';
 
 interface Customer {
   id: string;
@@ -15,7 +16,7 @@ interface Customer {
   email: string | null;
   etag: string;
 }
-interface License {
+interface License extends ManagedLicense {
   id: string;
   customerId: string | null;
   state: string;
@@ -34,7 +35,14 @@ interface Issued {
 
 @Component({
   selector: 'app-license-manager',
-  imports: [DatePipe, ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatInputModule],
+  imports: [
+    DatePipe,
+    ReactiveFormsModule,
+    MatButtonModule,
+    MatFormFieldModule,
+    MatInputModule,
+    LicenseLifecycle,
+  ],
   template: `
     <h4>Clientes</h4>
     <p>
@@ -193,6 +201,9 @@ interface Issued {
         }}
       </p>
       <p>Funcionalidades: {{ license.features.join(', ') || 'Ninguna' }}</p>
+      <button mat-button [disabled]="busy()" (click)="managed.set(license)">
+        Administrar esta licencia
+      </button>
     } @empty {
       <p>No hay licencias cargadas.</p>
     }
@@ -200,6 +211,12 @@ interface Issued {
       <button mat-button [disabled]="busy()" (click)="loadLicenses(licenseCursor())">
         Licencias siguientes
       </button>
+    }
+    @for (item of managed() ? [managed()!] : []; track item.id) {
+      <button mat-button (click)="managed.set(null)">Cerrar administración de licencia</button>
+      @defer (on immediate) {
+        <app-license-lifecycle [license]="item" />
+      }
     }
     @if (message()) {
       <p role="status">{{ message() }}</p>
@@ -234,6 +251,7 @@ export class LicenseManager {
   protected readonly licenseCursor = signal<string | null>(null);
   protected readonly selectedCustomer = signal<Customer | null>(null);
   protected readonly issued = signal<Issued | null>(null);
+  protected readonly managed = signal<License | null>(null);
   protected readonly busy = signal(false);
   protected readonly message = signal('');
   protected readonly state = new FormControl('', { nonNullable: true });
@@ -274,6 +292,7 @@ export class LicenseManager {
       this.customers.set([]);
       this.licenses.set([]);
       this.issued.set(null);
+      this.managed.set(null);
       this.customerCursor.set(null);
       this.licenseCursor.set(null);
       this.customerIntent = null;

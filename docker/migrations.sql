@@ -879,3 +879,27 @@ BEGIN
 END $EF$;
 COMMIT;
 
+START TRANSACTION;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261012141721_ImmutableLicenseHistory') THEN
+    CREATE FUNCTION licensehub_history_append_only() RETURNS trigger LANGUAGE plpgsql AS $$
+    BEGIN RAISE EXCEPTION 'License history is append-only'; END;
+    $$;
+    CREATE TRIGGER activation_append_only BEFORE UPDATE OR DELETE ON "LicenseActivations"
+    FOR EACH ROW EXECUTE FUNCTION licensehub_history_append_only();
+    CREATE TRIGGER renewal_append_only BEFORE UPDATE OR DELETE ON "LicenseRenewals"
+    FOR EACH ROW EXECUTE FUNCTION licensehub_history_append_only();
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261012141721_ImmutableLicenseHistory') THEN
+    INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES ('20261012141721_ImmutableLicenseHistory', '10.0.12');
+    END IF;
+END $EF$;
+COMMIT;
+

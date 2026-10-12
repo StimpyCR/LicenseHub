@@ -290,7 +290,8 @@ paths:
         CsrfToken: []
       description: Permiso licenses:renew; reactivate requiere licenses:reactivate. operationId es único permanente
         por aplicación. Solo licencias canjeadas. Este comando es renovación manual; pagos con intención de renovación
-        se aplican atómicamente en confirmPayment, nunca mediante este endpoint.
+        se aplican atómicamente en confirmPayment, nunca mediante este endpoint. operationId repetido con otra Idempotency-Key
+        devuelve 409 sin extensión adicional; replay de la misma clave conserva resultado original.
       parameters:
       - $ref: '#/components/parameters/Id'
       - $ref: '#/components/parameters/IdempotencyKey'
@@ -382,6 +383,8 @@ paths:
           $ref: '#/components/responses/Unavailable'
         '500':
           $ref: '#/components/responses/InternalError'
+      description: Permiso licenses:suspend. Motivo obligatorio y transición comprobada; Cancelled terminal. Propagación
+        de caché hasta 30 segundos.
   /api/v1/admin/licenses/{id}/revoke:
     post:
       tags:
@@ -431,6 +434,8 @@ paths:
           $ref: '#/components/responses/Unavailable'
         '500':
           $ref: '#/components/responses/InternalError'
+      description: Permiso licenses:revoke. Motivo obligatorio y transición comprobada; Cancelled terminal. Propagación
+        de caché hasta 30 segundos.
   /api/v1/admin/applications:
     get:
       tags:
@@ -2299,8 +2304,10 @@ components:
           schema:
             $ref: '#/components/schemas/Problem'
     Conflict:
-      description: license_unavailable, invalid_transition, subject_already_licensed, payment_already_applied, operation_conflict,
-        idempotency_conflict o idempotency_in_progress.
+      description: 'license_unavailable, invalid_transition, subject_already_licensed, payment_already_applied,
+        operation_conflict, idempotency_conflict o idempotency_in_progress. Implementación: license_already_activated,
+        license_not_activatable, license_subject_mismatch, subject_has_license, renewal_already_applied, invalid_transition
+        o conflict.'
       headers:
         Retry-After:
           schema:
@@ -3469,6 +3476,11 @@ components:
           - customers:manage
           - licenses:read
           - licenses:issue
+          - licenses:renew
+          - licenses:suspend
+          - licenses:revoke
+          - licenses:cancel
+          - licenses:reactivate
     AdminUserCreate:
       type: object
       additionalProperties: false

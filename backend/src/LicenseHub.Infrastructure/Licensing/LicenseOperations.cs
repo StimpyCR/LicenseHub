@@ -14,8 +14,8 @@ using Npgsql;
 
 namespace LicenseHub.Infrastructure.Licensing;
 
-public sealed class LicenseOperations(LicenseHubDbContext db, IApplicationAccess access, TimeProvider clock,
-    ICursorProtection cursorProtector) : ILicenseManagement, ILicenseIntegration
+public sealed partial class LicenseOperations(LicenseHubDbContext db, IApplicationAccess access, TimeProvider clock,
+    ICursorProtection cursorProtector) : ILicenseManagement, ILicenseIntegration, ILicenseLifecycle
 {
 
     public async Task<CustomerPage> CustomersAsync(Guid actor, Guid applicationId, string? cursor, int pageSize, CancellationToken ct)
@@ -305,7 +305,7 @@ public sealed class LicenseOperations(LicenseHubDbContext db, IApplicationAccess
         var binding = $"subject:{app}:{subject}";
         return db.Database.ExecuteSqlInterpolatedAsync($"SELECT pg_advisory_xact_lock(hashtextextended({binding}, 0))", ct);
     }
-    private void Audit(string actor, Guid app, Guid entity, string action, string trace) => db.Add(new AuditLogRow
+    private void Audit(string actor, Guid app, Guid entity, string action, string trace, string? reason = null) => db.Add(new AuditLogRow
     {
         Id = Guid.NewGuid(),
         ActorId = actor,
@@ -313,6 +313,7 @@ public sealed class LicenseOperations(LicenseHubDbContext db, IApplicationAccess
         EntityId = entity,
         Action = action,
         CorrelationId = trace,
+        Reason = reason,
         CreatedAt = clock.GetUtcNow()
     });
     private async Task<LicenseView> ViewAsync(LicenseRow row, CancellationToken ct) => View(row,

@@ -258,7 +258,7 @@ public sealed class LicenseOperationsTests
         }
     }
 
-    private static async Task<LicenseFixture> SetupAsync()
+    internal static async Task<LicenseFixture> SetupAsync()
     {
         var fixture = await AdminAuthenticationTests.AuthFixture.CreateAsync();
         try
@@ -273,7 +273,7 @@ public sealed class LicenseOperationsTests
         catch { await fixture.DisposeAsync(); throw; }
     }
 
-    private sealed class LicenseFixture(AdminAuthenticationTests.AuthFixture fixture, Guid actor, Guid app) : IAsyncDisposable
+    internal sealed class LicenseFixture(AdminAuthenticationTests.AuthFixture fixture, Guid actor, Guid app) : IAsyncDisposable
     {
         public AdminAuthenticationTests.AuthFixture Fixture { get; } = fixture;
         public Guid Actor { get; } = actor;
@@ -289,6 +289,11 @@ public sealed class LicenseOperationsTests
         {
             await using var scope = Fixture.Factory.Services.CreateAsyncScope();
             return await action(scope.ServiceProvider.GetRequiredService<ILicenseIntegration>());
+        }
+        public async Task<T> Lifecycle<T>(Func<ILicenseLifecycle, Task<T>> action)
+        {
+            await using var scope = Fixture.Factory.Services.CreateAsyncScope();
+            return await action(scope.ServiceProvider.GetRequiredService<ILicenseLifecycle>());
         }
         public async Task<Guid> NewApp(string slug)
         {

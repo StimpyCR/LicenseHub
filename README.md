@@ -65,3 +65,7 @@ Ver [gestión y enrolamiento privado](docs/admin-users.md). Creación pendiente,
 ## Clientes y licencias
 
 [Operaciones v1](docs/license-operations.md): clientes, emisión individual/lotes y activación transaccional disponibles. Integraciones pueden consultar estado y funcionalidades por subjectId de su propio backend. Reintentos de emisión no recuperan códigos y reintentos de activación son históricos. Panel conectado y 51 pruebas Docker pasadas; contrato HTTP comprobado. LicenseHub.SDK continúa en repositorio independiente.
+
+## Renovaciones e historial
+
+[Renovación y cambios de estado](docs/license-lifecycle.md) disponibles con permisos, motivo, concurrencia e idempotencia. Historial protegido por PostgreSQL. 58 pruebas pasadas y ocho respuestas HTTP contrastadas con OpenAPI. La caché del consumidor conserva una ventana máxima de 30 segundos; no se promete revocación instantánea.

@@ -161,6 +161,11 @@ export class AdminUserManager {
     'customers:manage',
     'licenses:read',
     'licenses:issue',
+    'licenses:renew',
+    'licenses:suspend',
+    'licenses:revoke',
+    'licenses:cancel',
+    'licenses:reactivate',
   ];
   protected readonly email = new FormControl('', {
     nonNullable: true,
