@@ -61,3 +61,7 @@ Ver [operaciones, idempotencia y rotación](docs/application-management.md). Lis
 ## Administradores delegados
 
 Ver [gestión y enrolamiento privado](docs/admin-users.md). Creación pendiente, permisos por aplicación y suspensión disponibles para SuperAdmin. Recuperación privada conserva roles/permisos y rechaza cuentas suspendidas. Verificadas 18 pruebas de integración y 9 de seguridad en este incremento, además del contrato y revisión visual con datos aislados. Próxima fase: clientes y licencias; todavía no se ofrecen sus operaciones.
+
+## Clientes y licencias
+
+[Operaciones v1](docs/license-operations.md): clientes, emisión individual/lotes y activación transaccional disponibles. Integraciones pueden consultar estado y funcionalidades por subjectId de su propio backend. Reintentos de emisión no recuperan códigos y reintentos de activación son históricos. Panel conectado y 51 pruebas Docker pasadas; contrato HTTP comprobado. LicenseHub.SDK continúa en repositorio independiente.

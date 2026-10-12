@@ -81,7 +81,9 @@ paths:
       tags:
       - Integration
       operationId: getLicenseStatus
-      description: Scope licenses:read. Sin licencia devuelve 200, license null y effectiveState None.
+      description: Scope licenses:read. Sin licencia devuelve 200, license null y effectiveState None. Una sola
+        licencia activa por sujeto; se prioriza Active/Suspended, luego el historial activado más reciente. Pending
+        no concede derechos.
       parameters:
       - $ref: '#/components/parameters/SubjectId'
       responses:
@@ -183,13 +185,10 @@ paths:
       security:
       - AdminSession: []
         CsrfToken: []
-      description: 'Permiso licenses:issue. Devuelve códigos completos solo en la respuesta de creación.
-
-        Un replay devuelve códigos null y codesRecoverable false; no se guardan secretos
-
-        en idempotencia. Cantidad de 1 a 100, operación atómica.
-
-        '
+      description: "Permiso licenses:issue. Devuelve códigos completos solo en la respuesta de creación.\nUn replay\
+        \ devuelve códigos null y codesRecoverable false; no se guardan secretos\nen idempotencia. Cantidad de 1\
+        \ a 100, operación atómica.\n Pending hasta canje, incluso OnIssue; OnIssue inicia el reloj inmediatamente.\
+        \ Un cliente preasignado no puede recibir un lote mayor de uno."
       parameters:
       - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
@@ -225,6 +224,8 @@ paths:
           $ref: '#/components/responses/Unavailable'
         '500':
           $ref: '#/components/responses/InternalError'
+        '404':
+          $ref: '#/components/responses/NotFound'
     get:
       tags:
       - Administration
@@ -275,6 +276,10 @@ paths:
           $ref: '#/components/responses/Unavailable'
         '500':
           $ref: '#/components/responses/InternalError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      description: Permiso licenses:read. Cursor firmado ligado a aplicación y filtros; estado efectivo calculado
+        en UTC.
   /api/v1/admin/licenses/{id}/renew:
     post:
       tags:
@@ -550,6 +555,10 @@ paths:
           $ref: '#/components/responses/Unavailable'
         '500':
           $ref: '#/components/responses/InternalError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      description: Permiso customers:read. Cursor firmado ligado a aplicación y filtros; subjectId pertenece al
+        backend consumidor.
     post:
       tags:
       - Administration
@@ -2628,6 +2637,7 @@ components:
             type: string
             pattern: ^[a-z][a-z0-9._-]{0,63}$
       description: Until permitido solo con OnIssue y fecha futura; features deben existir y estar activas en aplicación.
+        quantity debe ser 1 cuando customerId no es null.
     IssueResponse:
       type: object
       required:
@@ -3455,6 +3465,10 @@ components:
           - credentials:manage
           - features:read
           - features:manage
+          - customers:read
+          - customers:manage
+          - licenses:read
+          - licenses:issue
     AdminUserCreate:
       type: object
       additionalProperties: false

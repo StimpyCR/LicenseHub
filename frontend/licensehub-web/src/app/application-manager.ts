@@ -14,6 +14,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { finalize, switchMap, timeout } from 'rxjs';
 import { ApplicationDetails } from './application-details';
+import { LicenseManager } from './license-manager';
 
 interface ApplicationView {
   id: string;
@@ -32,6 +33,7 @@ interface ApplicationView {
     MatInputModule,
     MatCheckboxModule,
     ApplicationDetails,
+    LicenseManager,
   ],
   template: `
     <h3>Aplicaciones</h3>
@@ -40,6 +42,9 @@ interface ApplicationView {
       <p>{{ app.name }} · {{ app.slug }} · {{ app.isActive ? 'Activa' : 'Inactiva' }}</p>
       <button mat-button [disabled]="busy()" (click)="details.set(app)">
         Credenciales y funcionalidades
+      </button>
+      <button mat-button [disabled]="busy()" (click)="licensing.set(app)">
+        Clientes y licencias
       </button>
       @if (canManage()) {
         <button mat-stroked-button [disabled]="busy()" (click)="edit(app)">Editar</button>
@@ -79,6 +84,13 @@ interface ApplicationView {
         <app-application-details [applicationId]="app.id" />
       }
     }
+    @for (app of licensing() ? [licensing()!] : []; track app.id) {
+      <h3>Clientes y licencias · {{ app.name }}</h3>
+      <button mat-button (click)="licensing.set(null)">Cerrar clientes y licencias</button>
+      @defer (on immediate) {
+        <app-license-manager [applicationId]="app.id" />
+      }
+    }
   `,
   styles: `
     form {
@@ -93,6 +105,7 @@ interface ApplicationView {
   `,
 })
 export class ApplicationManager {
+  protected readonly licensing = signal<ApplicationView | null>(null);
   readonly canManage = input(false);
   private readonly http = inject(HttpClient);
   private readonly destroyRef = inject(DestroyRef);

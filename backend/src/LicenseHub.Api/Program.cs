@@ -19,6 +19,9 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
+using LicenseHub.Api.Licensing;
+using LicenseHub.Application.Licensing;
+using LicenseHub.Infrastructure.Licensing;
 
 var bootstrapMode = args.Contains("--bootstrap-admin", StringComparer.Ordinal);
 var recoveryMode = args.Contains("--recover-admin", StringComparer.Ordinal);
@@ -51,6 +54,10 @@ builder.Services.AddScoped<IAdminAuthentication, AdminAuthentication>();
 builder.Services.AddScoped<IIntegrationAuthentication, IntegrationAuthentication>();
 builder.Services.AddScoped<IApplicationAccess, ApplicationAccess>();
 builder.Services.AddScoped<IApplicationManagement, ApplicationManagement>();
+builder.Services.AddScoped<LicenseOperations>();
+builder.Services.AddSingleton<ICursorProtection, CursorProtection>();
+builder.Services.AddScoped<ILicenseManagement>(provider => provider.GetRequiredService<LicenseOperations>());
+builder.Services.AddScoped<ILicenseIntegration>(provider => provider.GetRequiredService<LicenseOperations>());
 builder.Services.AddScoped<IAuthorizationHandler, ApplicationCapabilityHandler>();
 builder.Services.AddScoped<AdminSessionCookieEvents>();
 builder.Services.ConfigureHttpJsonOptions(options =>
@@ -261,6 +268,7 @@ if (builder.Configuration.GetValue<bool>("Jobs:Enabled"))
 app.MapAdminAuth();
 app.MapAdminUsers();
 app.MapApplicationManagement();
+app.MapLicenseOperations();
 app.MapHealthChecks("/health/live", new() { Predicate = _ => false }).AllowAnonymous();
 app.MapHealthChecks("/health/ready", new() { Predicate = registration => registration.Tags.Contains("ready") }).AllowAnonymous();
 // Los endpoints de negocio se implementan por fases; no hay respuestas simuladas.

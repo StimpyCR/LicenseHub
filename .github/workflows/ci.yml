@@ -20,6 +20,7 @@ jobs:
           --health-interval 5s --health-timeout 5s --health-retries 20
     env:
       LICENSEHUB_TEST_CONNECTION: Host=127.0.0.1;Database=licensehub_tests;Username=licensehub_test;Password=${{ github.run_id }}-${{ github.run_attempt }}
+      LICENSEHUB_CONTRACT_RESULTS_DIR: .tooling/contract-results
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
@@ -34,6 +35,8 @@ jobs:
         with:
           python-version: '3.12'
       - run: python tools/check-nuget-audit.py nuget-audit.json
+      - run: python -m pip install -r contracts/requirements-validation.txt
+      - run: python contracts/validate_http_results.py .tooling/contract-results
   frontend:
     runs-on: ubuntu-latest
     defaults:
