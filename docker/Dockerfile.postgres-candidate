@@ -1,0 +1,6 @@
+# Candidata aislada; no reemplaza el servicio postgres de compose.yaml.
+FROM postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24
+# El entrypoint soporta un usuario no root y no necesita gosu en ese modo.
+# El helper deja de estar accesible en el filesystem final; no se suprimen CVE.
+RUN rm /usr/local/bin/gosu
+USER postgres

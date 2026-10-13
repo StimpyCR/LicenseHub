@@ -1,4 +1,4 @@
-param([ValidateSet('Backup', 'RestoreTest')][string]$Mode = 'Backup', [string]$Archive)
+param([ValidateSet('Backup', 'RestoreTest')][string]$Mode = 'Backup', [string]$Archive, [string]$RestoreContainer)
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $root = Split-Path $PSScriptRoot -Parent
@@ -6,6 +6,10 @@ $docker = Join-Path $env:LOCALAPPDATA 'Programs/DockerDesktop/resources/bin/dock
 $private = Join-Path $root '.secrets/backups'
 $keyPath = Join-Path $root '.secrets/backup-key'
 $pg = 'licensehub-local-postgres-1'
+if ($RestoreContainer) {
+    if ($Mode -ne 'RestoreTest' -or $RestoreContainer -notmatch '^licensehub-postgres-candidate-[a-f0-9]{32}-tests$') { throw 'Solo se permite un destino candidato aislado para restauración.' }
+    $pg = $RestoreContainer
+}
 $api = 'licensehub-local-api-1'
 function Docker {
     $output = & $docker @args
@@ -34,11 +38,14 @@ if ($key.Length -ne 32) { throw 'Clave AES inválida.' }
 $id = [Guid]::NewGuid().ToString('N')
 $scratch = Join-Path $private "work-$id"
 Protect-Directory $scratch
-$containerDump = "/tmp/licensehub-backup-$id.dump"
+$containerDirectory = "/tmp/licensehub-backup-$id"
+if ($RestoreContainer) { $containerDirectory = "/var/lib/postgresql/data/licensehub-restore-$id" }
+$containerDump = "$containerDirectory/database.dump"
 $target = "licensehub_restore_${id}_tests"
 $started = [DateTimeOffset]::UtcNow
 $aes = [Security.Cryptography.AesGcm]::new($key, 16)
 try {
+    Docker exec $pg mkdir -m 700 -- $containerDirectory | Out-Null
     if ($Mode -eq 'Backup') {
         Docker exec $pg pg_dump -U licensehub_local -d licensehub --format=custom --file=$containerDump | Out-Null
         Docker cp "${pg}:$containerDump" (Join-Path $scratch 'database.dump') | Out-Null
@@ -120,4 +127,5 @@ try {
     if (!$resolved.StartsWith($boundary, [StringComparison]::OrdinalIgnoreCase)) { throw 'Ruta temporal fuera del directorio privado.' }
     if (Test-Path -LiteralPath $resolved) { Remove-Item -LiteralPath $resolved -Recurse -Force }
     Docker exec $pg rm -f -- $containerDump | Out-Null
+    Docker exec $pg rmdir -- $containerDirectory | Out-Null
 }

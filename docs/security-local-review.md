@@ -33,3 +33,6 @@ La descarga monta solo la base pública; los análisis posteriores tienen la red
 
 
 Se descargó y analizó una candidata PostgreSQL 17 Alpine sin iniciar contenedor ni cambiar la DB: 1 incidencia crítica, 24 altas, 28 medias y 3 bajas. También requiere revisión; no se propone reemplazar automáticamente la imagen actual ni se afirma compatibilidad de collations/extensiones entre distribuciones. Versiones/paquetes/CVE específicos en el informe privado .tooling/security/findings.md.
+
+
+Se preparó después una candidata no root sin helper de cambio de usuario: 0 críticas/altas y 1 media en filesystem final, restauración real y 79 pruebas aprobadas. Se detectó diferencia de ordenación glibc/musl que impide asumir equivalencia. No se sustituyó el servicio actual. Ver postgres-candidate.md; el detalle sigue privado.

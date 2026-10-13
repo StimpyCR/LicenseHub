@@ -29,3 +29,6 @@ La automatización de CI no despliega. Completar y revisar configuración concre
 
 
 Actualización: Mailpit/proxy añadidos y configuración SMTP/red de API actualizada dentro del alcance solicitado; PostgreSQL/web conservaron IDs/montajes. Suite actual completa 79 (49 integración, 17 unitarias, 13 seguridad), sin fallos/omisiones. Lockfiles NuGet/npm analizados offline sin incidencias. Las bibliotecas del SO en imágenes tienen hallazgos: no confundir con cero vulnerabilidades en dependencias gestionadas. CI reemplaza auditoría npm automática/online por Trivy offline; informes privados de imágenes no se publican.
+
+
+Evaluación posterior PostgreSQL: candidata aislada no root, 0 críticas/altas y 1 media; backup real restaurado y 79 pruebas aprobadas. Se detectó diferencia de collations glibc/musl, por lo que origen no se cambia y fase continúa abierta. Ver postgres-candidate.md.

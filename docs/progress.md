@@ -53,3 +53,6 @@ Fase 9 verificada: 74 pruebas LicenseHub pasadas, con repetición de los dos cas
 
 
 Avance correo/seguridad local: Mailpit persistente, UI loopback, SMTP interno sin salida, 79 pruebas completas aprobadas incluyendo cuatro correos reales capturados. Trivy offline sobre imágenes/lockfiles; PostgreSQL conserva hallazgos críticos/altos pendientes de revisión autorizada. No se exportaron inventarios ni se habilitó Brevo; no se compró dominio. Fase 10 continúa abierta.
+
+
+Candidata PostgreSQL evaluada sin tocar origen: scan offline 0 críticas/altas, restauración de 39 tablas y 79 pruebas pasadas. Ordenación glibc/musl diferente: decisión/migración pendiente, no reemplazo autorizado. Prueba Mailpit corregida para buzón preexistente sin limpiar capturas. Ver postgres-candidate.md.

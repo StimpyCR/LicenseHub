@@ -61,8 +61,10 @@ public sealed class MailpitDeliveryTests
         async Task Check(string[] events)
         {
             var messages = await capture.GetFromJsonAsync<JsonElement>("/api/v1/search?query=" + Uri.EscapeDataString("to:" + recipient));
-            Assert.Equal(events.Length, messages.GetProperty("total").GetInt32());
+            Assert.Equal(events.Length, messages.GetProperty("messages_count").GetInt32());
             var items = messages.GetProperty("messages").EnumerateArray().ToArray();
+            Assert.Equal(events.Length, items.Length);
+            Assert.All(items, item => Assert.Contains(item.GetProperty("To").EnumerateArray(), address => address.GetProperty("Address").GetString() == recipient));
             foreach (var eventType in events) Assert.Single(items, item => item.GetProperty("Subject").GetString()!.EndsWith(" · " + eventType, StringComparison.Ordinal));
             foreach (var item in items)
             {
