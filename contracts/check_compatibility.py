@@ -41,10 +41,7 @@ def schema_refs(value):
     return found
 
 
-def main():
-    root = Path(__file__).parent
-    baseline = yaml.safe_load((root / "baseline/licensehub-v1.yaml").read_text(encoding="utf-8"))
-    current = yaml.safe_load((root / "openapi/licensehub-v1.yaml").read_text(encoding="utf-8"))
+def check_snapshot(baseline, current):
     required_schemas = set()
     for path, item in baseline["paths"].items():
         if path.startswith("/api/v1/licenses/"):
@@ -67,7 +64,21 @@ def main():
         required_schemas |= schema_refs(old_schema)
         visited.add(name)
     compare(baseline["security"], current["security"], "security")
-    print("SDK v1 compatible con baseline de desarrollo; revisión semántica sigue siendo necesaria.")
+
+
+def main():
+    root = Path(__file__).parent
+    current = yaml.safe_load((root / "openapi/licensehub-v1.yaml").read_text(encoding="utf-8"))
+    snapshots = [root / "baseline/licensehub-v1.yaml"]
+    frozen = root / "releases/1.0.0/licensehub-v1.yaml"
+    if frozen.exists():
+        import hashlib
+        if hashlib.sha256(frozen.read_bytes()).hexdigest() != (frozen.parent / "SHA256").read_text().strip():
+            raise ValueError("El contrato congelado no coincide con su checksum")
+        snapshots.append(frozen)
+    for snapshot in snapshots:
+        check_snapshot(yaml.safe_load(snapshot.read_text(encoding="utf-8")), current)
+    print(f"SDK v1 compatible con {len(snapshots)} snapshots; revisión semántica sigue siendo necesaria.")
 
 
 if __name__ == "__main__":

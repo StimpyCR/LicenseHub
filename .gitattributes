@@ -1,0 +1,3 @@
+# Preserve reviewed contract bytes and SHA256 across Windows/Linux checkouts.
+contracts/openapi/licensehub-v1.yaml -text
+contracts/releases/** -text

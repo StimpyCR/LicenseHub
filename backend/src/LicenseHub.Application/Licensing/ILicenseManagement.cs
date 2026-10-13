@@ -48,6 +48,7 @@ public sealed class IssueResponse
     public bool CodesRecoverable { get; init; }
     public required IssueItem[] Items { get; init; }
 }
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed class ActivationRequest
 {
     public required string LicenseKey { get; init; }

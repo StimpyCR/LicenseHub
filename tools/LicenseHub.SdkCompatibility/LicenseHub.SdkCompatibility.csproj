@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <LicenseHubSdkProject Condition="'$(LicenseHubSdkProject)' == ''">../../../LicenseHub.SDK/src/LicenseHub.SDK/LicenseHub.SDK.csproj</LicenseHubSdkProject>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="$(LicenseHubSdkProject)" />
+  </ItemGroup>
+</Project>

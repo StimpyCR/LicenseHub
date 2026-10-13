@@ -32,9 +32,12 @@ var enrollmentMode = args.Contains("--enroll-admin", StringComparer.Ordinal);
 var maintenanceMode = args.Contains("--cleanup-auth", StringComparer.Ordinal);
 var provisionJobsMode = args.Contains("--provision-jobs", StringComparer.Ordinal);
 var notificationsMode = args.Contains("--run-notifications", StringComparer.Ordinal);
-if (new[] { bootstrapMode, recoveryMode, enrollmentMode, maintenanceMode, provisionJobsMode, notificationsMode }.Count(mode => mode) > 1)
+var sdkPrepareMode = args.Contains("--prepare-sdk-fixture", StringComparer.Ordinal);
+var sdkTransitionMode = args.Contains("--transition-sdk-fixture", StringComparer.Ordinal);
+if (new[] { bootstrapMode, recoveryMode, enrollmentMode, maintenanceMode, provisionJobsMode, notificationsMode, sdkPrepareMode, sdkTransitionMode }.Count(mode => mode) > 1)
     throw new InvalidOperationException("Selecciona una sola operación administrativa privada.");
-var builder = WebApplication.CreateBuilder(args.Where(argument => argument is not "--bootstrap-admin" and not "--recover-admin" and not "--enroll-admin" and not "--cleanup-auth" and not "--provision-jobs" and not "--run-notifications").ToArray());
+var builder = WebApplication.CreateBuilder(args.Where(argument => argument is not "--bootstrap-admin" and not "--recover-admin" and not "--enroll-admin" and not "--cleanup-auth" and not "--provision-jobs" and not "--run-notifications" and not "--prepare-sdk-fixture" and not "--transition-sdk-fixture").ToArray());
+builder.Services.ConfigureHttpJsonOptions(options => options.SerializerOptions.AllowDuplicateProperties = false);
 builder.WebHost.ConfigureKestrel(options => options.Limits.MaxRequestBodySize = 131072);
 // Separate cookies for an isolated UI test host on another localhost port.
 var cookiePrefix = builder.Environment.IsEnvironment("Testing") ? builder.Configuration["Testing:CookiePrefix"] ?? "LicenseHub" : "LicenseHub";
@@ -222,6 +225,11 @@ if (builder.Configuration.GetValue<bool>("Jobs:Enabled") || provisionJobsMode)
     builder.Services.AddHangfireServer();
 }
 var app = builder.Build();
+if (sdkPrepareMode || sdkTransitionMode)
+{
+    Environment.ExitCode = await SdkFixtureCommand.RunAsync(app.Services, builder.Configuration, builder.Environment, sdkTransitionMode, CancellationToken.None);
+    await app.DisposeAsync(); return;
+}
 if (notificationsMode)
 {
     try

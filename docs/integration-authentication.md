@@ -1,6 +1,6 @@
 # Autenticación de aplicaciones
 
-La fase 3 incorpora el esquema `IntegrationCredential` y las políticas `licenses:activate`, `licenses:read` y `warnings:read`. La gestión de credenciales ya está implementada según application-management.md; los endpoints de licencias siguen pendientes; este incremento no devuelve derechos Premium simulados ni crea credenciales del operador.
+La fase 3 incorpora el esquema `IntegrationCredential` y las políticas `licenses:activate`, `licenses:read` y `warnings:read`. La gestión de credenciales ya está implementada según application-management.md; los cuatro endpoints de licencias están implementados y verificados con LicenseHub.SDK. Ver sdk-contract-v1.md y sdk-live-integration.md.
 
 El contrato OpenAPI establece un secreto opaco de 32 bytes aleatorios, base64url sin padding (43 caracteres). La emisión muestra el secreto una vez y guarda SHA-256 hexadecimal en mayúsculas. Un índice único permite resolver la credencial sin duplicidades. No se utiliza JWT ni se comparte el secreto con Angular, aplicaciones móviles o el navegador de StockMini.
 
@@ -14,10 +14,10 @@ Los servicios reciben CancellationToken y el handler transmite RequestAborted. E
 
 ## Autorización administrativa por aplicación
 
-`IApplicationAccess` consulta el permiso exacto `(userId, applicationId, capability)`, exige MFA habilitado y ausencia de lockout, y reconoce SuperAdmin. `ApplicationCapabilityHandler` requiere una identidad administrativa con MFA verificado. Los endpoints futuros deberán seleccionar exclusivamente el esquema de sesión y pasar a AuthorizeAsync el ApplicationId real del recurso obtenido de la base. Un rechazo sobre un recurso ajeno se traducirá a 404 antes de devolver datos. Nunca usar un applicationId ajeno al recurso ni combinar listas agregadas de permisos y aplicaciones.
+`IApplicationAccess` consulta el permiso exacto `(userId, applicationId, capability)`, exige MFA habilitado y ausencia de lockout, y reconoce SuperAdmin. `ApplicationCapabilityHandler` requiere una identidad administrativa con MFA verificado. Los endpoints administrativos seleccionan exclusivamente el esquema de sesión y comprueban permisos sobre el ApplicationId real del recurso obtenido de la base. Un rechazo sobre un recurso ajeno se traducirá a 404 antes de devolver datos. Nunca usar un applicationId ajeno al recurso ni combinar listas agregadas de permisos y aplicaciones.
 
 La validación de sesión persistente sigue en AdminSessionCookieEvents. La lista de capabilities de `/admin/auth/session` sirve para presentación y no otorga un producto cartesiano de permisos entre aplicaciones.
 
 ## Verificación
 
-Pruebas de integración sobre bases PostgreSQL aisladas comprueban credenciales desconocidas, expiradas, revocadas, aplicación inactiva, scopes inválidos, cancelación, resolución de aplicación desde secreto, rechazo de secretos en URL, separación de esquemas y permisos emparejados por aplicación. No sustituyen las futuras pruebas BOLA de los endpoints de licencias.
+Pruebas de integración sobre bases PostgreSQL aisladas comprueban credenciales desconocidas, expiradas, revocadas, aplicación inactiva, scopes inválidos, cancelación, resolución de aplicación desde secreto, rechazo de secretos en URL, separación de esquemas y permisos emparejados por aplicación. Se complementan con pruebas BOLA de licencias y compatibilidad HTTPS real del SDK.

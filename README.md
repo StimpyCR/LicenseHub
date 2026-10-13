@@ -40,7 +40,7 @@ Verificado el 11 de octubre de 2026:
 - Revisión visual de escritorio claro y viewport móvil oscuro sin desbordamiento horizontal. Capturas en `docs/screenshots`.
 - Imágenes API/web compiladas y Compose ejecutado con PostgreSQL real. HTTPS local: live/ready 200 Healthy; documento Angular, bundles, CSP y recursos PWA correctos. API y nginx ejecutan como usuarios no root. Instalación PWA en dispositivos pendiente.
 
-Pendiente: workflow GitHub, generador C# del SDK, casos de uso administrativos/integración y pruebas productivas completas. Docker Desktop y su motor Linux están operativos. No se encontraron AGENTS.md en el espacio de trabajo. La validación Python usa versiones fijadas en `contracts/requirements-validation.txt`. El contrato sigue siendo draft, sin release publicada.
+Pendiente: workflow GitHub, generador C# del SDK, casos de uso administrativos/integración y pruebas productivas completas. Docker Desktop y su motor Linux están operativos. Las instrucciones del proyecto están en AGENTS.md. La validación Python usa versiones fijadas en `contracts/requirements-validation.txt`. El contrato sigue siendo draft, sin release publicada.
 
 
 
@@ -77,3 +77,7 @@ Ver [gestión y enrolamiento privado](docs/admin-users.md). Creación pendiente,
 ## Informes administrativos
 
 [Dashboard, auditoría y CSV](docs/admin-reports.md) por aplicación, con permisos delegables y búsqueda de clientes. Exportación sin claves, neutralización de fórmulas y límite explícito de 10 000 filas. 72 pruebas pasadas y quince respuestas HTTP validadas. La PWA avisa de nuevas versiones y permite recargar voluntariamente después de guardar los códigos recién emitidos.
+
+## Compatibilidad SDK verificada
+
+[Contrato definitivo v1](docs/sdk-contract-v1.md) y [pruebas HTTPS desde host](docs/sdk-live-integration.md). Contrato congelado con checksum en contracts/releases/1.0.0. SDK existente separado: 94 pruebas pasadas sin omisiones; LicenseHub 74 pasadas. Aplicaciones, clientes y licencias de ensayo persistentes con credenciales privadas; no despliegue productivo.

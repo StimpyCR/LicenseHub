@@ -1,6 +1,6 @@
 # Estado por fases
 
-Estado actualizado el 12 de octubre de 2026. Los párrafos siguientes conservan el historial de verificación de cada incremento.
+Estado actualizado el 13 de octubre de 2026. Los párrafos siguientes conservan el historial de verificación de cada incremento.
 
 1. Arquitectura, modelo y contrato v1 diseñados. API versionada y pruebas HTTP reales; publicación de release y comprobación con generador del SDK corresponden a fase 9.
 2. Base .NET/PostgreSQL/Angular/Docker implementada y verificada localmente.
@@ -10,7 +10,7 @@ Estado actualizado el 12 de octubre de 2026. Los párrafos siguientes conservan 
 6. Renovación, estados e historial inmutable implementados y verificados.
 7. Pagos y notificaciones implementados y verificados. Transporte SMTP real probado localmente; proveedor operativo pendiente de configuración privada.
 8. Dashboard, auditoría por aplicación, búsqueda de clientes, filtros, paginación y CSV implementados; 72 pruebas pasadas y revisión visual ejecutada. Ver docs/admin-reports.md.
-9. Pendiente cierre de entrega del contrato para LicenseHub.SDK; el SDK permanece en repositorio separado.
+9. Compatibilidad local verificada y contrato v1 congelado. SDK existente: 94 pruebas pasadas sin omisiones; fixtures persistentes por aplicación y HTTPS desde host. Ver docs/sdk-live-integration.md.
 10. Pendiente validación final de seguridad, respaldo/restauración y preparación operativa. No despliegue automático a producción.
 
 Verificación Docker (2026-10-11): cliente y motor 29.8.2 operativos. PostgreSQL 17 iniciado en contenedor aislado con contraseña aleatoria fuera del código. Prueba de integración: 1 pasada, 0 fallos y 0 omisiones. La prueba aplica la migración y verifica aislamiento por claves foráneas y unicidad de activación; no prueba aún endpoints ni activaciones concurrentes.
@@ -48,3 +48,5 @@ Docker local actualizado con NotificationOutboxDeduplication y trabajos persiste
 
 Fase 8: 72 pruebas Linux/Docker pasadas (46 integración, 9 seguridad, 17 unitarias), quince respuestas HTTP compatibles, formato C# y contrato correctos. Angular lint/build pasan con aviso de presupuesto 523,78 kB. Revisión aislada: dashboard, búsqueda, descarga CSV, auditoría y actualización PWA; móvil sin desbordamiento. GitHub Actions de fase 7 (78bbe60) finalizó success: https://github.com/StimpyCR/LicenseHub/actions/runs/38344689286.
 Docker local fase 8 actualizado; HTTPS live/ready, bundles, CSP y PWA verificados. Cuenta principal conservada; entorno sintético y archivos privados retirados.
+
+Fase 9 verificada: 74 pruebas LicenseHub pasadas, con repetición de los dos casos afectados; 94 pruebas SDK pasadas sin omisiones, una activación adicional de B, 83+30 comprobaciones HTTPS y 28 respuestas reales de los cuatro endpoints validadas. Contrato congelado SHA256 989e2e7b382489a32b727c3bb951a1cb313210a6a2cc308c29e4bc23f282f30d y copia SDK sincronizada. StockMini Integration Test UUID dde7150c-d78b-4c30-8258-2441bf4cc9d7, fixtures y credenciales privadas persistentes; cuenta del operador intacta. No se eliminó ni recreó la base principal. Endurecimiento JSON inválido y limitación de Windows documentados. OpenAPI HTTPS normal coincide con checksum; no publicación NuGet ni producción. CI fase 8 c961526 finalizó success.

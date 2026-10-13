@@ -3,7 +3,7 @@ jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
 info:
   title: LicenseHub API
   version: 1.0.0
-  description: 'Contrato draft, previo a implementación. HTTPS obligatorio.
+  description: 'Contrato v1 revisado para LicenseHub.SDK. HTTPS obligatorio.
 
     Integraciones autenticadas por credencial opaca de backend; aplicación derivada
 
@@ -20,7 +20,9 @@ info:
     requieren X-CSRF-TOKEN. Recursos ajenos se responden como 404.
 
 
-    Sesiones administrativas implementadas; endpoints de negocio en desarrollo por fases.
+    Sesiones administrativas, licencias y derechos implementados; SDK en repositorio independiente.
+
+    Solicitudes JSON sin propiedades duplicadas; activación admite solo licenseKey y subjectId.
 
     Las sondas /health son la única excepción HTTP para redes internas/locales; no aceptan secretos ni operaciones
     de negocio.'

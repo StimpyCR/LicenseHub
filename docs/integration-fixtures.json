@@ -1,0 +1,68 @@
+{
+  "runId": "6934214a-6ddc-434c-bb98-1a5374f347c1",
+  "baseUrl": "https://localhost:8443/",
+  "applicationId": "dde7150c-d78b-4c30-8258-2441bf4cc9d7",
+  "otherApplicationId": "5bc97582-c269-4e74-b5f5-afbdc628de4d",
+  "credentialId": "ec24251e-6585-4b19-a798-9c97b7915d47",
+  "otherCredentialId": "c405dad0-425f-4ea5-82d6-ec63bbf2a083",
+  "readOnlyCredentialId": "a227465e-4e4f-40fb-b6e3-f00e94c9b105",
+  "revokedCredentialId": "8a4e3cae-16aa-4d74-958d-581149783121",
+  "credentialExpiresAt": "2026-10-20T05:16:17.3889531Z",
+  "feature": "advanced_reports",
+  "fixtures": {
+    "activation": {
+      "applicationId": "dde7150c-d78b-4c30-8258-2441bf4cc9d7",
+      "licenseId": "a6b7c490-1558-46bb-9f34-c42da26dde69",
+      "customerId": "be9cde44-e0a4-4704-83cf-5b313b1a72ec",
+      "subjectId": "sdk-it-6934214a6ddc-activation"
+    },
+    "expired": {
+      "applicationId": "dde7150c-d78b-4c30-8258-2441bf4cc9d7",
+      "licenseId": "602a0dd4-3808-4318-86bd-cc64a79715f9",
+      "customerId": "0abff75a-375c-4c3d-b261-0ef7f5b5cde9",
+      "subjectId": "sdk-it-6934214a6ddc-expired"
+    },
+    "renewed": {
+      "applicationId": "dde7150c-d78b-4c30-8258-2441bf4cc9d7",
+      "licenseId": "98822af7-77ca-4281-872a-a59137ff1680",
+      "customerId": "c388617a-93f2-434e-bdca-efdac89d29fb",
+      "subjectId": "sdk-it-6934214a6ddc-renewed"
+    },
+    "revoked": {
+      "applicationId": "dde7150c-d78b-4c30-8258-2441bf4cc9d7",
+      "licenseId": "10ae8d4e-acf4-4a48-8b92-c056130c5358",
+      "customerId": "bbad986f-1a2a-4cdd-863d-cd91ed2060c8",
+      "subjectId": "sdk-it-6934214a6ddc-revoked"
+    },
+    "lifetime": {
+      "applicationId": "dde7150c-d78b-4c30-8258-2441bf4cc9d7",
+      "licenseId": "b358d7b8-1f1d-46af-a013-09deefa26136",
+      "customerId": "4f5379d4-e7af-418e-bd44-0b31db1604ae",
+      "subjectId": "sdk-it-6934214a6ddc-lifetime"
+    },
+    "suspended": {
+      "applicationId": "dde7150c-d78b-4c30-8258-2441bf4cc9d7",
+      "licenseId": "14977dc8-a689-4a46-9469-6e5d31aca7a8",
+      "customerId": "321ea278-48bc-4644-85bb-9610f7a349fa",
+      "subjectId": "sdk-it-6934214a6ddc-suspended"
+    },
+    "cancelled": {
+      "applicationId": "dde7150c-d78b-4c30-8258-2441bf4cc9d7",
+      "licenseId": "55eebd79-f7aa-48fa-8a67-8d144dc158c3",
+      "customerId": "5c25e3be-0aef-430d-96ce-74de5c44cc18",
+      "subjectId": "sdk-it-6934214a6ddc-cancelled"
+    },
+    "other": {
+      "applicationId": "5bc97582-c269-4e74-b5f5-afbdc628de4d",
+      "licenseId": "4c52c744-e454-4283-aa3a-dd9e90e4a327",
+      "customerId": "edccd28f-ee3a-4872-8f05-1a8f2a50e37a",
+      "subjectId": "sdk-it-6934214a6ddc-activation"
+    },
+    "other-exclusive": {
+      "applicationId": "5bc97582-c269-4e74-b5f5-afbdc628de4d",
+      "licenseId": "cb9514a0-bce4-418b-a9e7-ab99a80d42ab",
+      "customerId": "6bf203df-8612-416a-ba98-e2ede4c51d38",
+      "subjectId": "sdk-it-6934214a6ddc-other-exclusive"
+    }
+  }
+}
