@@ -71,8 +71,9 @@ jobs:
       - name: Download public scanner and vulnerability database only
         run: |
           mkdir -p "$RUNNER_TEMP/trivy-cache" "$RUNNER_TEMP/licensehub-lockfiles"
+          sudo chown 65532:65532 "$RUNNER_TEMP/trivy-cache"
           docker pull aquasec/trivy:0.75.0@sha256:af6acf9a6b85dfe389a1941505c0ce9efef52a4719635e1a962f022a3d855daa
-          docker run --rm --cap-drop ALL --security-opt no-new-privileges --mount "type=bind,source=$RUNNER_TEMP/trivy-cache,target=/cache" aquasec/trivy:0.75.0@sha256:af6acf9a6b85dfe389a1941505c0ce9efef52a4719635e1a962f022a3d855daa image --cache-dir /cache --download-db-only --disable-telemetry --skip-version-check --quiet
+          docker run --rm --user 65532:65532 --cap-drop ALL --security-opt no-new-privileges --mount "type=bind,source=$RUNNER_TEMP/trivy-cache,target=/cache" aquasec/trivy:0.75.0@sha256:af6acf9a6b85dfe389a1941505c0ce9efef52a4719635e1a962f022a3d855daa image --cache-dir /cache --download-db-only --disable-telemetry --skip-version-check --quiet
           git ls-files -z '*packages.lock.json' 'frontend/licensehub-web/package-lock.json' | while IFS= read -r -d '' file; do
             install -D "$file" "$RUNNER_TEMP/licensehub-lockfiles/$file"
           done
