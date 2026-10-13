@@ -141,7 +141,9 @@ paths:
       tags:
       - Integration
       operationId: getLicenseWarnings
-      description: Scope warnings:read. Solo avisos del sujeto dentro de la aplicación autenticada.
+      description: Scope warnings:read. Solo avisos del sujeto dentro de la aplicación autenticada. Solo avisos
+        InApp vencidos para entrega y de la versión actual de derechos; mensajes de texto plano. Las alertas anteriores
+        a la renovación quedan obsoletas.
       parameters:
       - $ref: '#/components/parameters/SubjectId'
       - $ref: '#/components/parameters/Cursor'
@@ -646,12 +648,14 @@ paths:
           $ref: '#/components/responses/Unavailable'
         '500':
           $ref: '#/components/responses/InternalError'
+      description: Permiso payments:read. Importes decimales exactos, cursor protegido ligado a aplicación/filtros.
     post:
       tags:
       - Administration
       operationId: createPayment
       description: Permiso payments:record; Pending. FK licencia/cliente/aplicación deben coincidir. Moneda ISO4217,
-        amount > 0. No datos de tarjeta.
+        amount > 0. No datos de tarjeta. Registro manual Pending; no mueve dinero ni cobra. Confirmación con renovación
+        requiere permiso explícito de reactivación si la intención lo solicita.
       security:
       - AdminSession: []
         CsrfToken: []
@@ -1665,8 +1669,10 @@ paths:
       tags:
       - Administration
       operationId: upsertNotificationTemplate
-      description: Permiso notifications:manage; texto plano, variables allowlist licenseId, expiresAt, applicationName.
-        No ejecutar código ni HTML de usuario. Actualización requiere expectedVersion en cuerpo; 0 crea.
+      description: 'Permiso notifications:manage; texto plano, variables allowlist licenseId, expiresAt, applicationName.
+        No ejecutar código ni HTML de usuario. Actualización requiere expectedVersion en cuerpo; 0 crea. Texto plano:
+        HTML no se interpreta. Variables permitidas {applicationName}, {subjectId}, {licenseId}, {expiresAt}, {eventType}.
+        expectedVersion 0 crea; versión vigente actualiza.'
       security:
       - AdminSession: []
         CsrfToken: []
@@ -1696,6 +1702,8 @@ paths:
           $ref: '#/components/responses/Unavailable'
         '500':
           $ref: '#/components/responses/InternalError'
+        '412':
+          $ref: '#/components/responses/PreconditionFailed'
       parameters:
       - $ref: '#/components/parameters/Id'
       - $ref: '#/components/parameters/IdempotencyKey'
@@ -2815,6 +2823,17 @@ components:
         etag:
           type: string
           pattern: ^"[0-9]+"$
+        renewalIntent:
+          oneOf:
+          - $ref: '#/components/schemas/PaymentRenewalIntent'
+          - type: 'null'
+          description: Intención inmutable que el administrador debe revisar antes de confirmar.
+        confirmedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+          pattern: Z$
     Warning:
       type: object
       required:
@@ -3354,6 +3373,8 @@ components:
           type: boolean
         inAppEnabled:
           type: boolean
+      description: Al menos un canal habilitado. Offsets aplican a nuevas programaciones; deshabilitar un canal
+        impide su entrega pendiente. V1 utiliza plantillas es para correo.
     NotificationTemplate:
       type: object
       additionalProperties: false
@@ -3416,6 +3437,7 @@ components:
           - Sent
           - Failed
           - Cancelled
+          - Skipped
         attempts:
           type: integer
           minimum: 0
@@ -3424,6 +3446,25 @@ components:
           - string
           - 'null'
           maxLength: 1000
+        applicationId:
+          type: string
+          format: uuid
+        customerId:
+          type: string
+          format: uuid
+        eventType:
+          type: string
+        entitlementVersion:
+          type: string
+          pattern: ^[0-9]+$
+        offsetSeconds:
+          type: integer
+        channel:
+          type: string
+        scheduledAt:
+          type: string
+          format: date-time
+          pattern: Z$
     Dashboard:
       type: object
       additionalProperties: false
@@ -3481,6 +3522,13 @@ components:
           - licenses:revoke
           - licenses:cancel
           - licenses:reactivate
+          - payments:read
+          - payments:manage
+          - payments:confirm
+          - payments:reject
+          - payments:refund
+          - notifications:read
+          - notifications:manage
     AdminUserCreate:
       type: object
       additionalProperties: false

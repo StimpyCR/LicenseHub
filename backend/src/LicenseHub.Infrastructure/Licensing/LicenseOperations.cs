@@ -139,6 +139,7 @@ public sealed partial class LicenseOperations(LicenseHubDbContext db, IApplicati
                     EntitlementVersion = 1
                 };
                 db.Add(row);
+                if (request.StartMode == "OnIssue") NotificationEvent(row, "Schedule");
                 foreach (var feature in request.Features) db.Add(new LicenseFeatureRow
                 {
                     Id = Guid.NewGuid(),
@@ -215,6 +216,7 @@ public sealed partial class LicenseOperations(LicenseHubDbContext db, IApplicati
                 Version = 1
             };
             db.Add(activation);
+            NotificationEvent(row, "Activated");
             Audit("application:" + applicationId, applicationId, row.Id, "license.activated", trace);
             return new ActivationResponse(activation.Id, now.UtcDateTime, await SnapshotAsync(row, request.SubjectId, ct));
         }, null, ct);
@@ -372,4 +374,19 @@ public sealed partial class LicenseOperations(LicenseHubDbContext db, IApplicati
         if (etag != Tag(version)) throw Error("precondition_failed", 412);
     }
     private static ManagementException Error(string code, int status) => new(code, status);
+    private void NotificationEvent(LicenseRow row, string eventType)
+    {
+        if (row.CustomerId is null) return;
+        db.Add(new NotificationOutboxRow
+        {
+            Id = Guid.NewGuid(),
+            ApplicationId = row.ApplicationId,
+            AggregateId = row.Id,
+            AggregateVersion = row.EntitlementVersion,
+            EventType = eventType,
+            PayloadJson = "{}",
+            CreatedAt = clock.GetUtcNow(),
+            Version = 1
+        });
+    }
 }

@@ -135,6 +135,7 @@ public sealed class LicenseHubDbContext(DbContextOptions<LicenseHubDbContext> op
         outbox.Property(x => x.PayloadJson).HasColumnType("jsonb");
         outbox.Property(x => x.EventType).HasMaxLength(64);
         outbox.HasIndex(x => x.CreatedAt).HasFilter("\"ProcessedAt\" IS NULL");
+        outbox.HasIndex(x => new { x.ApplicationId, x.AggregateId, x.AggregateVersion, x.EventType }).IsUnique();
         var idempotency = Tenant<IdempotencyRow>(model, "IdempotencyRecords");
         idempotency.Property(x => x.PrincipalId).HasMaxLength(128);
         idempotency.Property(x => x.Operation).HasMaxLength(128);

@@ -15,6 +15,8 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { finalize, switchMap, timeout } from 'rxjs';
 import { ApplicationDetails } from './application-details';
 import { LicenseManager } from './license-manager';
+import { PaymentManager } from './payment-manager';
+import { NotificationManager } from './notification-manager';
 
 interface ApplicationView {
   id: string;
@@ -34,6 +36,8 @@ interface ApplicationView {
     MatCheckboxModule,
     ApplicationDetails,
     LicenseManager,
+    PaymentManager,
+    NotificationManager,
   ],
   template: `
     <h3>Aplicaciones</h3>
@@ -45,6 +49,10 @@ interface ApplicationView {
       </button>
       <button mat-button [disabled]="busy()" (click)="licensing.set(app)">
         Clientes y licencias
+      </button>
+      <button mat-button [disabled]="busy()" (click)="billing.set(app)">Pagos manuales</button>
+      <button mat-button [disabled]="busy()" (click)="notifications.set(app)">
+        Notificaciones
       </button>
       @if (canManage()) {
         <button mat-stroked-button [disabled]="busy()" (click)="edit(app)">Editar</button>
@@ -91,6 +99,20 @@ interface ApplicationView {
         <app-license-manager [applicationId]="app.id" />
       }
     }
+    @for (app of billing() ? [billing()!] : []; track app.id) {
+      <h3>Pagos · {{ app.name }}</h3>
+      <button mat-button (click)="billing.set(null)">Cerrar pagos</button>
+      @defer (on immediate) {
+        <app-payment-manager [applicationId]="app.id" />
+      }
+    }
+    @for (app of notifications() ? [notifications()!] : []; track app.id) {
+      <h3>Notificaciones · {{ app.name }}</h3>
+      <button mat-button (click)="notifications.set(null)">Cerrar notificaciones</button>
+      @defer (on immediate) {
+        <app-notification-manager [applicationId]="app.id" />
+      }
+    }
   `,
   styles: `
     form {
@@ -105,6 +127,8 @@ interface ApplicationView {
   `,
 })
 export class ApplicationManager {
+  protected readonly notifications = signal<ApplicationView | null>(null);
+  protected readonly billing = signal<ApplicationView | null>(null);
   protected readonly licensing = signal<ApplicationView | null>(null);
   readonly canManage = input(false);
   private readonly http = inject(HttpClient);

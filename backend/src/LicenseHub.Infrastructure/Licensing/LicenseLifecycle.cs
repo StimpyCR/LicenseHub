@@ -26,6 +26,9 @@ public sealed partial class LicenseOperations
             row.State = target;
             row.Version++;
             row.EntitlementVersion++;
+            await InvalidateNotificationsAsync(row, ct);
+            if (command is "suspend" or "revoke") NotificationEvent(row, command == "suspend" ? "Suspended" : "Revoked");
+            else if (command == "reactivate") NotificationEvent(row, "Schedule");
             Audit(actor.ToString(), row.ApplicationId, id, "license." + command, trace, reason);
             return await ViewAsync(row, ct);
         }, null, ct);
@@ -82,7 +85,9 @@ public sealed partial class LicenseOperations
         row.State = LicenseState.Active;
         row.Version++;
         row.EntitlementVersion++;
+        await InvalidateNotificationsAsync(row, ct);
         db.Add(renewal);
+        NotificationEvent(row, "Renewed");
         Audit(actor.ToString(), row.ApplicationId, row.Id, "license.renewed", trace, request.Reason);
     }
 
@@ -145,4 +150,8 @@ public sealed partial class LicenseOperations
     {
         if (string.IsNullOrWhiteSpace(value) || value.Length > 1000) throw Error("validation_failed", 400);
     }
+    private Task<int> InvalidateNotificationsAsync(LicenseRow row, CancellationToken ct) => db.Set<NotificationLogRow>()
+        .Where(x => x.LicenseId == row.Id && x.ApplicationId == row.ApplicationId && x.EntitlementVersion != row.EntitlementVersion
+            && (x.State == "Pending" || x.State == "Failed"))
+        .ExecuteUpdateAsync(set => set.SetProperty(x => x.State, "Cancelled").SetProperty(x => x.LastErrorRedacted, "obsolete_entitlement"), ct);
 }

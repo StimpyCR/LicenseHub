@@ -22,15 +22,20 @@ using Serilog;
 using LicenseHub.Api.Licensing;
 using LicenseHub.Application.Licensing;
 using LicenseHub.Infrastructure.Licensing;
+using LicenseHub.Application.Billing;
+using LicenseHub.Application.Notifications;
+using LicenseHub.Infrastructure.Notifications;
 
 var bootstrapMode = args.Contains("--bootstrap-admin", StringComparer.Ordinal);
 var recoveryMode = args.Contains("--recover-admin", StringComparer.Ordinal);
 var enrollmentMode = args.Contains("--enroll-admin", StringComparer.Ordinal);
 var maintenanceMode = args.Contains("--cleanup-auth", StringComparer.Ordinal);
 var provisionJobsMode = args.Contains("--provision-jobs", StringComparer.Ordinal);
-if (new[] { bootstrapMode, recoveryMode, enrollmentMode, maintenanceMode, provisionJobsMode }.Count(mode => mode) > 1)
+var notificationsMode = args.Contains("--run-notifications", StringComparer.Ordinal);
+if (new[] { bootstrapMode, recoveryMode, enrollmentMode, maintenanceMode, provisionJobsMode, notificationsMode }.Count(mode => mode) > 1)
     throw new InvalidOperationException("Selecciona una sola operación administrativa privada.");
-var builder = WebApplication.CreateBuilder(args.Where(argument => argument is not "--bootstrap-admin" and not "--recover-admin" and not "--enroll-admin" and not "--cleanup-auth" and not "--provision-jobs").ToArray());
+var builder = WebApplication.CreateBuilder(args.Where(argument => argument is not "--bootstrap-admin" and not "--recover-admin" and not "--enroll-admin" and not "--cleanup-auth" and not "--provision-jobs" and not "--run-notifications").ToArray());
+builder.WebHost.ConfigureKestrel(options => options.Limits.MaxRequestBodySize = 131072);
 // Separate cookies for an isolated UI test host on another localhost port.
 var cookiePrefix = builder.Environment.IsEnvironment("Testing") ? builder.Configuration["Testing:CookiePrefix"] ?? "LicenseHub" : "LicenseHub";
 if (!System.Text.RegularExpressions.Regex.IsMatch(cookiePrefix, "\\A[A-Za-z0-9]{1,32}\\z"))
@@ -59,6 +64,28 @@ builder.Services.AddSingleton<ICursorProtection, CursorProtection>();
 builder.Services.AddScoped<ILicenseManagement>(provider => provider.GetRequiredService<LicenseOperations>());
 builder.Services.AddScoped<ILicenseIntegration>(provider => provider.GetRequiredService<LicenseOperations>());
 builder.Services.AddScoped<ILicenseLifecycle>(provider => provider.GetRequiredService<LicenseOperations>());
+builder.Services.AddScoped<IPaymentManagement>(provider => provider.GetRequiredService<LicenseOperations>());
+builder.Services.AddScoped<INotificationManagement>(provider => provider.GetRequiredService<LicenseOperations>());
+var notificationLocale = builder.Configuration["Notifications:Locale"] ?? "es";
+if (!System.Text.RegularExpressions.Regex.IsMatch(notificationLocale, "\\A[a-z]{2}(-[A-Z]{2})?\\z")) throw new InvalidOperationException("Locale de notificaciones inválido.");
+builder.Services.AddScoped<NotificationWorker>(provider => new(provider.GetRequiredService<LicenseHubDbContext>(), provider.GetRequiredService<TimeProvider>(),
+    provider.GetRequiredService<IEmailSender>(), provider.GetRequiredService<ICursorProtection>(), notificationLocale));
+builder.Services.AddScoped<INotificationWorker>(provider => provider.GetRequiredService<NotificationWorker>());
+builder.Services.AddScoped<IWarningQueries>(provider => provider.GetRequiredService<NotificationWorker>());
+var allowUnencryptedMail = builder.Configuration.GetValue<bool>("Smtp:AllowUnencryptedDevelopment");
+if (allowUnencryptedMail && !builder.Environment.IsDevelopment() && !builder.Environment.IsEnvironment("Testing"))
+    throw new InvalidOperationException("SMTP sin TLS está permitido exclusivamente en desarrollo/pruebas.");
+var smtpPasswordFile = builder.Configuration["Smtp:PasswordFile"];
+builder.Services.AddSingleton(new SmtpOptions
+{
+    Host = builder.Configuration["Smtp:Host"],
+    From = builder.Configuration["Smtp:From"],
+    Port = builder.Configuration.GetValue<int?>("Smtp:Port") ?? 587,
+    Username = builder.Configuration["Smtp:Username"],
+    Password = string.IsNullOrWhiteSpace(smtpPasswordFile) ? null : File.ReadAllText(smtpPasswordFile).Trim(),
+    AllowUnencryptedDevelopment = allowUnencryptedMail
+});
+builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
 builder.Services.AddScoped<IAuthorizationHandler, ApplicationCapabilityHandler>();
 builder.Services.AddScoped<AdminSessionCookieEvents>();
 builder.Services.ConfigureHttpJsonOptions(options =>
@@ -194,6 +221,18 @@ if (builder.Configuration.GetValue<bool>("Jobs:Enabled") || provisionJobsMode)
     builder.Services.AddHangfireServer();
 }
 var app = builder.Build();
+if (notificationsMode)
+{
+    try
+    {
+        await using var scope = app.Services.CreateAsyncScope();
+        var worker = scope.ServiceProvider.GetRequiredService<INotificationWorker>();
+        await worker.ReconcileAsync(CancellationToken.None); await worker.DispatchAsync(CancellationToken.None);
+        Console.WriteLine("Notificaciones procesadas; consultar registros para estados de entrega y errores.");
+    }
+    catch { Console.Error.WriteLine("notification_processing_failed"); Environment.ExitCode = 1; }
+    await app.DisposeAsync(); return;
+}
 if (provisionJobsMode)
 {
     try
@@ -202,6 +241,10 @@ if (provisionJobsMode)
         app.Services.GetRequiredService<IRecurringJobManager>().AddOrUpdate<IAuthMaintenance>("auth-cleanup",
             maintenance => maintenance.CleanupAsync(CancellationToken.None), Cron.Hourly(), new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
         app.Services.GetRequiredService<IBackgroundJobClient>().Enqueue<IAuthMaintenance>(maintenance => maintenance.CleanupAsync(CancellationToken.None));
+        app.Services.GetRequiredService<IRecurringJobManager>().AddOrUpdate<INotificationWorker>("notification-reconcile",
+            worker => worker.ReconcileAsync(CancellationToken.None), Cron.Minutely(), new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
+        app.Services.GetRequiredService<IRecurringJobManager>().AddOrUpdate<INotificationWorker>("notification-dispatch",
+            worker => worker.DispatchAsync(CancellationToken.None), Cron.Minutely(), new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
         Console.WriteLine("Almacenamiento Hangfire provisionado; limpieza registrada y encolada.");
         Environment.ExitCode = 0;
     }
@@ -242,7 +285,7 @@ app.UseStatusCodePages();
 if (!app.Environment.IsDevelopment() && !app.Environment.IsEnvironment("Testing")) app.UseHsts();
 app.Use(async (context, next) =>
 {
-    if (context.Request.Path.StartsWithSegments("/api/v1/admin/auth"))
+    if (context.Request.Path.StartsWithSegments("/api/v1/admin/auth") || context.Request.Path.StartsWithSegments("/api/v1/licenses"))
     {
         var bodySize = context.Features.Get<Microsoft.AspNetCore.Http.Features.IHttpMaxRequestBodySizeFeature>();
         if (bodySize is { IsReadOnly: false }) bodySize.MaxRequestBodySize = 8192;
@@ -271,6 +314,8 @@ app.MapAdminUsers();
 app.MapApplicationManagement();
 app.MapLicenseOperations();
 app.MapLicenseLifecycle();
+app.MapPayments();
+app.MapNotifications();
 app.MapHealthChecks("/health/live", new() { Predicate = _ => false }).AllowAnonymous();
 app.MapHealthChecks("/health/ready", new() { Predicate = registration => registration.Tags.Contains("ready") }).AllowAnonymous();
 // Los endpoints de negocio se implementan por fases; no hay respuestas simuladas.

@@ -69,3 +69,7 @@ Ver [gestión y enrolamiento privado](docs/admin-users.md). Creación pendiente,
 ## Renovaciones e historial
 
 [Renovación y cambios de estado](docs/license-lifecycle.md) disponibles con permisos, motivo, concurrencia e idempotencia. Historial protegido por PostgreSQL. 58 pruebas pasadas y ocho respuestas HTTP contrastadas con OpenAPI. La caché del consumidor conserva una ventana máxima de 30 segundos; no se promete revocación instantánea.
+
+## Pagos y notificaciones
+
+[Pagos manuales y notificaciones](docs/payments-notifications.md) disponibles. Confirmación y renovación atómicas, outbox persistente, alertas y plantillas por aplicación, transporte SMTP y avisos de integración. 67 pruebas pasadas y trece respuestas HTTP validadas. El proveedor SMTP requiere configuración privada; no se simulan envíos.

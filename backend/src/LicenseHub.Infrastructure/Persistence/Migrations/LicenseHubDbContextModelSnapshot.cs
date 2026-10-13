@@ -795,6 +795,9 @@ namespace LicenseHub.Infrastructure.Persistence.Migrations
                     b.HasIndex("CreatedAt")
                         .HasFilter("\"ProcessedAt\" IS NULL");
 
+                    b.HasIndex("ApplicationId", "AggregateId", "AggregateVersion", "EventType")
+                        .IsUnique();
+
                     b.ToTable("NotificationOutbox", (string)null);
                 });
 

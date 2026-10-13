@@ -17,8 +17,13 @@ for filename, schema_name in {
     'customer.json': 'Customer',
     'lifecycle.json': 'License',
     'renewal.json': 'RenewalRecord',
+    'payment.json': 'Payment',
+    'warning.json': 'Warning',
+    'notification-settings.json': 'NotificationSettings',
+    'notification-template.json': 'NotificationTemplate',
+    'notification-log.json': 'NotificationLog',
 }.items():
     instance = json.loads((directory / filename).read_text(encoding='utf-8'))
     schema = {'$ref': f'#/components/schemas/{schema_name}', 'components': document['components']}
     Draft202012Validator(schema, format_checker=FormatChecker()).validate(instance)
-print('8 respuestas HTTP reales compatibles con OpenAPI v1.')
+print('13 respuestas HTTP reales compatibles con OpenAPI v1.')
