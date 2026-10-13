@@ -1,0 +1,28 @@
+server {
+    listen 8443 ssl;
+    server_name ${LICENSEHUB_PUBLIC_HOST};
+    ssl_certificate /run/secrets/tls_certificate;
+    ssl_certificate_key /run/secrets/tls_key;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    client_max_body_size 128k;
+    root /usr/share/nginx/html;
+    add_header Strict-Transport-Security "max-age=31536000" always;
+    add_header X-Content-Type-Options nosniff always;
+    add_header Referrer-Policy same-origin always;
+    add_header Cache-Control no-cache always;
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; worker-src 'self'; frame-ancestors 'none'; base-uri 'self'" always;
+    location /api/ {
+        proxy_pass http://api:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Forwarded-For $remote_addr;
+    }
+    location /health/ {
+        proxy_pass http://api:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Forwarded-For $remote_addr;
+    }
+    location /openapi/ { return 404; }
+    location / { try_files $uri $uri/ /index.html; }
+}

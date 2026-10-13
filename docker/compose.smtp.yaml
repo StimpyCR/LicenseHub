@@ -1,0 +1,14 @@
+# Complemento opt-in. No se usa en start-local ni configura/envía correo por sí solo.
+services:
+  api:
+    environment:
+      Smtp__Host: ${LICENSEHUB_SMTP_HOST:-smtp.gmail.com}
+      Smtp__Port: ${LICENSEHUB_SMTP_PORT:-587}
+      Smtp__From: ${LICENSEHUB_SMTP_FROM:?Define el remitente real verificado}
+      Smtp__Username: ${LICENSEHUB_SMTP_USERNAME:?Define la cuenta SMTP exclusiva}
+      Smtp__PasswordFile: /run/secrets/smtp_password
+      Smtp__AllowUnencryptedDevelopment: "false"
+    secrets: [smtp_password]
+secrets:
+  smtp_password:
+    file: ${LICENSEHUB_SMTP_PASSWORD_FILE:?Define el archivo privado con la contraseña de aplicación}

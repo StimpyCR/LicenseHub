@@ -201,6 +201,9 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 var protection = builder.Services.AddDataProtection().SetApplicationName("LicenseHub");
 var keyPath = builder.Configuration["DataProtection:KeyPath"];
 var production = !builder.Environment.IsDevelopment() && !builder.Environment.IsEnvironment("Testing");
+if (production && (string.IsNullOrWhiteSpace(builder.Configuration["AllowedHosts"])
+    || builder.Configuration["AllowedHosts"]!.Split(';').Any(host => host.Trim() is "*" or "")))
+    throw new InvalidOperationException("Producción requiere AllowedHosts con dominios explícitos.");
 var certificatePath = builder.Configuration["DataProtection:CertificatePath"];
 if (production && (string.IsNullOrWhiteSpace(keyPath) || string.IsNullOrWhiteSpace(certificatePath)))
     throw new InvalidOperationException("Producción requiere almacenamiento persistente y certificado de cifrado para DataProtection.");
@@ -210,9 +213,13 @@ else
     protection.PersistKeysToFileSystem(new DirectoryInfo(keyPath ?? Path.Combine(builder.Environment.ContentRootPath, ".keys")));
     if (!string.IsNullOrWhiteSpace(certificatePath))
     {
+        var certificatePasswordFile = builder.Configuration["DataProtection:CertificatePasswordFile"];
+        var certificatePassword = string.IsNullOrWhiteSpace(certificatePasswordFile)
+            ? builder.Configuration["DataProtection:CertificatePassword"] : File.ReadAllText(certificatePasswordFile).Trim();
         var certificate = X509CertificateLoader.LoadPkcs12FromFile(certificatePath,
-            builder.Configuration["DataProtection:CertificatePassword"], X509KeyStorageFlags.EphemeralKeySet);
-        if (!certificate.HasPrivateKey || certificate.NotAfter.ToUniversalTime() <= DateTime.UtcNow)
+            certificatePassword, X509KeyStorageFlags.EphemeralKeySet);
+        if (!certificate.HasPrivateKey || certificate.NotBefore.ToUniversalTime() > DateTime.UtcNow
+            || certificate.NotAfter.ToUniversalTime() <= DateTime.UtcNow)
             throw new InvalidOperationException("El certificado de DataProtection debe tener clave privada y estar vigente.");
         protection.ProtectKeysWithCertificate(certificate);
     }

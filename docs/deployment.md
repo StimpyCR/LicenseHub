@@ -1,9 +1,15 @@
-# Despliegue
+# Preparación de despliegue
 
-Esta versión es una base de fase 2, no un producto listo para producción. No se autoriza ni realiza despliegue productivo. El workflow de CI solo valida/compila/prueba, sin credenciales de despliegue.
+Módulos y SDK v1 implementados y verificados localmente. No se autorizó ni realizó despliegue productivo. CI solo comprueba.
 
-Preparar ambientes separados; imágenes con digest y SBOM después de validar Docker. Configurar HTTPS en ingress, TLS moderno, DNS, certificado renovable, origen único del panel/API, AllowedHosts restringido al dominio real, KnownProxies explícitos, HSTS y secretos administrados. No usar el compose Development como plantilla productiva sin endurecimiento. Persistir y cifrar DataProtection, configurar cuenta SQL mínima y aplicar migraciones con identidad separada y revisión de script.
+docker/compose.yaml es Development. docker/compose.production.yaml es una plantilla independiente con nombre/red/volumen distintos, sin PostgreSQL ni migraciones automáticas; requiere DB ya provisionada con runtime mínimo. No combinar ambas.
 
-Una sonda live no consulta base; ready comprueba conexión y migraciones. No dirigir tráfico hasta ready. El backend no aplica migraciones al arrancar; coordinar migraciones y releases. Hangfire dashboard no se expone. Servicios de correo, alertas y workers se habilitan solamente después de implementar y verificar outbox/reintentos.
+Variables: LICENSEHUB_API_IMAGE y LICENSEHUB_WEB_IMAGE (digest aprobado repo@sha256:...), LICENSEHUB_PUBLIC_HOST (dominio real), LICENSEHUB_DB_CONNECTION_FILE, LICENSEHUB_DP_CERTIFICATE_FILE y LICENSEHUB_DP_PASSWORD_FILE (PFX DP/contraseña), LICENSEHUB_TLS_CERTIFICATE_FILE y LICENSEHUB_TLS_KEY_FILE. LICENSEHUB_LISTEN_ADDRESS por defecto 127.0.0.1; puerto 8443. Revisar ingress/443 y no publicar DB. La plantilla exige valores, pero revisar realmente digest/infraestructura antes de ejecutar.
 
-Gates: endpoints reales cubiertos por contrato; MFA/bootstrap/CSRF/BOLA y scopes probados; SDK validado; canjes concurrentes en PostgreSQL; pagos/renovaciones idempotentes; cache/revocación documentada; dependencias sin vulnerabilidades conocidas aceptables; backup/restore ensayado; pruebas responsive/PWA en plataformas objetivo. Registrar evidencia y solicitar autorización antes de producción.
+Producción, AllowedHosts explícito, keyring persistente cifrado y proxy nginx explícito. PFX DP independiente de TLS, privado/vigente; conservar versiones antiguas. API/web no root, rootfs solo lectura, capacidades eliminadas, no-new-privileges; escrituras solo tmpfs/keyring. Nginx genera plantilla en tmpfs y añade HSTS/TLS 1.2/1.3. Compose validado estructuralmente; nginx generado y cargado en prueba temporal sin publicar puertos. No acredita DNS/certificados/conexión productivos.
+
+Aplicar migraciones revisadas y --provision-jobs con identidad migradora propietaria separada antes de workers. Runtime NO SUPERUSER/CREATEDB/CREATEROLE/REPLICATION, sin membresía/propiedad migradora. Aplicar docker/runtime-permissions.sql con psql -v runtime_role=... -v database_name=...; revisar permisos tras nuevas tablas. API no migra/provisiona al arrancar.
+
+Verificar HTTPS y /health/ready antes de tráfico; /health/live no consulta DB. Configurar probes en orquestador/monitor: no se añadieron sondas dependientes de curl inexistente. Dashboard Hangfire cerrado. Monitorizar outbox, errores redactados y fallos backup/SMTP.
+
+Correo opt-in con docker/compose.smtp.yaml; ver smtp-configuration.md. No habilitado mientras remitente/clave no estén verificados. Para producción faltan dominio/TLS, digests/SBOM/escaneo imágenes, custodia DP/backups externa, rol DB efectivo, RPO/RTO/retención/destino/alertas y pruebas PWA en dispositivos. Solicitar autorización explícita sobre configuración concreta antes de desplegar.

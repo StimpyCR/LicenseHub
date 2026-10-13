@@ -1,6 +1,6 @@
 # LicenseHub
 
-Estado: prioridades de fases 3–4 implementadas; revisión final de flujos administrativos en curso. Backend con persistencia, bootstrap, login/MFA/sesiones, recuperación privada, limpieza persistente y gestión de aplicaciones/credenciales/catálogo. Frontend Angular Material/PWA con formularios administrativos. Licencias pendientes; no hay SDK aquí ni despliegue productivo.
+Estado: fases 1–9 implementadas y compatibilidad SDK v1 verificada. Fase 10 en curso: backup cifrado/restauración real, revisión de seguridad y preparación operativa. No se desplegó a producción. El SDK permanece en su propio repositorio.
 
 ## Entregables
 
@@ -8,17 +8,17 @@ Estado: prioridades de fases 3–4 implementadas; revisión final de flujos admi
 - `contracts/compatibility.md`: reglas para el SDK independiente.
 - `docs/architecture.md`: límites, seguridad y transacciones.
 - `docs/data-model.md`: entidades, restricciones y estados.
-- `docs/sdk-handoff.md`: firmas previstas, matriz de pruebas y rutas administrativas pendientes.
+- `docs/sdk-handoff.md`: contrato cerrado y matriz de integración del SDK independiente.
 - `contracts/examples/`: fixtures para el consumidor.
 - `contracts/validate_contract.py`: validación ejecutable de contrato y ejemplos.
 
-La fase 2 solamente comienza después de validar el contrato y resolver errores críticos. LicenseHub.SDK vive en otro repositorio. Los ejemplos y el contrato no son evidencia de pruebas ejecutadas.
+LicenseHub.SDK vive en otro repositorio. El contrato v1 está congelado; ver docs/sdk-contract-v1.md y docs/sdk-live-integration.md para evidencia real.
 
 ## Ejecutar y continuar
 
 Ver [instalación](docs/installation.md), [estado por fases](docs/progress.md), [seguridad](docs/security.md), [manual administrativo](docs/administration.md), [despliegue](docs/deployment.md) y [respaldo/restauración](docs/backup-restore.md).
 
-La solución está en `backend/LicenseHub.slnx`; el frontend en `frontend/licensehub-web`. PostgreSQL requiere secretos de conexión suministrados por el operador. Compose no incluye contraseñas por defecto. El panel inicial comprueba disponibilidad, pero no simula licencias ni pagos.
+La solución está en `backend/LicenseHub.slnx`; el frontend en `frontend/licensehub-web`. PostgreSQL requiere secretos de conexión suministrados por el operador. Compose no incluye contraseñas por defecto. El panel administra aplicaciones, clientes, licencias, renovaciones, pagos, notificaciones y auditoría con persistencia real.
 
 ## Referencias oficiales
 
@@ -29,21 +29,7 @@ La solución está en `backend/LicenseHub.slnx`; el frontend en `frontend/licens
 
 ## Estado de verificación
 
-Verificado el 11 de octubre de 2026:
-
-- Backend Release: compilación correcta, cero advertencias y errores.
-- xUnit: 32 pruebas con evidencia de ejecución: 16 unitarias en Linux/Docker del incremento anterior (sin cambios), 8 de seguridad en Windows y 8 de integración con PostgreSQL real ejecutadas en este incremento. Incluyen MFA, CSRF, lockout, replay, concurrencia, expiración, cookie revocada, autenticación de integración y permisos emparejados por aplicación. Control de aplicaciones de Windows bloqueó la DLL unitaria; se verificó en Linux sin desactivar esa protección. BOLA de licencias y otros endpoints de negocio sigue pendiente.
-- Angular: build de producción y lint TypeScript/Prettier correctos.
-- OpenAPI, referencias y cuatro fixtures validados; compatibilidad con baseline de desarrollo comprobada.
-- Migración y script SQL idempotente generados; EF no detectó cambios pendientes de modelo. Migración aplicada a PostgreSQL 17 real en Docker: 1 prueba de integración pasada, sin omisiones; comprobó claves foráneas entre aplicaciones y activación única.
-- NuGet transitivo y npm sin vulnerabilidades reportadas al consultar sus bases de avisos.
-- Revisión visual de escritorio claro y viewport móvil oscuro sin desbordamiento horizontal. Capturas en `docs/screenshots`.
-- Imágenes API/web compiladas y Compose ejecutado con PostgreSQL real. HTTPS local: live/ready 200 Healthy; documento Angular, bundles, CSP y recursos PWA correctos. API y nginx ejecutan como usuarios no root. Instalación PWA en dispositivos pendiente.
-
-Pendiente: workflow GitHub, generador C# del SDK, casos de uso administrativos/integración y pruebas productivas completas. Docker Desktop y su motor Linux están operativos. Las instrucciones del proyecto están en AGENTS.md. La validación Python usa versiones fijadas en `contracts/requirements-validation.txt`. El contrato sigue siendo draft, sin release publicada.
-
-
-
+Fase 9: API 74 pruebas y SDK 94 aprobadas sin omisiones; HTTPS real y contrato congelado, CI aprobado. La evidencia actual de fase 10 y sus pendientes están en [fase10-verification.md](docs/fase10-verification.md). [progress.md](docs/progress.md) conserva el historial de incrementos. Los ejemplos por sí solos no acreditan compatibilidad.
 
 ## Autenticación administrativa
 
@@ -51,7 +37,7 @@ Pendiente: workflow GitHub, generador C# del SDK, casos de uso administrativos/i
 
 Login devuelve un desafío, nunca una sesión sin MFA. PostgreSQL controla consumo único, replay de códigos y sesión de 30 minutos sin renovación; logout invalida cookies copiadas. Formularios reactivos, CSRF por solicitud, credenciales sin almacenamiento en navegador y permisos consultados del servidor. Capturas actualizadas en docs/screenshots/admin-login-light.jpg y admin-login-mobile-dark.jpg.
 
-La [autenticación de integración](docs/integration-authentication.md) incorpora un esquema Bearer opaco con aplicación/scopes resueltos desde PostgreSQL y permisos administrativos emparejados por aplicación. Pendientes: aplicar las políticas a los futuros endpoints de negocio y recuperación administrativa. Gestión de credenciales en fase 4. No se expusieron módulos ficticios de licencias/pagos. OpenAPI mantiene la compatibilidad de integración SDK.
+La [autenticación de integración](docs/integration-authentication.md) incorpora un esquema Bearer opaco con aplicación/scopes resueltos desde PostgreSQL y permisos administrativos emparejados por aplicación. Las políticas se aplican a endpoints de negocio; gestión de credenciales y recuperación privada implementadas. OpenAPI mantiene la compatibilidad de integración SDK.
 
 ## Gestión de aplicaciones
 
@@ -60,7 +46,7 @@ Ver [operaciones, idempotencia y rotación](docs/application-management.md). Lis
 
 ## Administradores delegados
 
-Ver [gestión y enrolamiento privado](docs/admin-users.md). Creación pendiente, permisos por aplicación y suspensión disponibles para SuperAdmin. Recuperación privada conserva roles/permisos y rechaza cuentas suspendidas. Verificadas 18 pruebas de integración y 9 de seguridad en este incremento, además del contrato y revisión visual con datos aislados. Próxima fase: clientes y licencias; todavía no se ofrecen sus operaciones.
+Ver [gestión y enrolamiento privado](docs/admin-users.md). Creación pendiente, permisos por aplicación y suspensión disponibles para SuperAdmin. Recuperación privada conserva roles/permisos y rechaza cuentas suspendidas. Verificadas 18 pruebas de integración y 9 de seguridad en este incremento, además del contrato y revisión visual con datos aislados. Clientes y licencias implementados posteriormente; ver los módulos siguientes.
 
 ## Clientes y licencias
 
@@ -81,3 +67,8 @@ Ver [gestión y enrolamiento privado](docs/admin-users.md). Creación pendiente,
 ## Compatibilidad SDK verificada
 
 [Contrato definitivo v1](docs/sdk-contract-v1.md) y [pruebas HTTPS desde host](docs/sdk-live-integration.md). Contrato congelado con checksum en contracts/releases/1.0.0. SDK existente separado: 94 pruebas pasadas sin omisiones; LicenseHub 74 pasadas. Aplicaciones, clientes y licencias de ensayo persistentes con credenciales privadas; no despliegue productivo.
+
+
+## Preparación operativa
+
+[Fase 10 en curso](docs/fase10-verification.md): respaldo cifrado y restauración real aislada, pruebas de integridad/permisos, guards productivos y plantilla de despliegue separada. Gmail configurable, sin envíos reales. Persisten pendientes de cuenta, infraestructura, custodia externa y escaneo de imágenes autorizado.

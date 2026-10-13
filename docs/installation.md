@@ -13,7 +13,7 @@ Desde la raíz LicenseHub:
 
 El arranque genera contraseña aleatoria solo si no existe, exporta certificado HTTPS y guarda archivos en .secrets/compose, excluidos del repositorio/contexto Docker. No imprime secretos. Valida Compose, construye imágenes, espera PostgreSQL, aplica SQL idempotente deteniéndose ante errores e inicia API/web. No cambiar la contraseña mientras se conserve el volumen PostgreSQL. Usar -SkipBuild para repetir sin recompilar.
 
-Abrir https://localhost:8443. Para confiar en el certificado del navegador: dotnet dev-certs https --trust. verify-local comprueba sondas, Angular, bundles, CSP y PWA; omite confianza del certificado solo para sondas locales, sin demostrar TLS productivo ni instalación PWA.
+Abrir https://localhost:8443. Para confiar en el certificado del navegador: dotnet dev-certs https --trust. verify-local comprueba sondas, Angular, bundles, CSP y PWA; valida normalmente el certificado TLS confiable local; no demuestra DNS/TLS productivo ni instalación PWA en dispositivos.
 
 El script establece LICENSEHUB_DB_PASSWORD_FILE, LICENSEHUB_DB_CONNECTION_FILE, LICENSEHUB_TLS_CERTIFICATE_FILE y LICENSEHUB_TLS_KEY_FILE. La conexión interna usa Host=postgres;Database=licensehub;Username=licensehub_local y la contraseña privada. Certificado/clave son PEM para localhost. No hay contraseñas predeterminadas.
 
@@ -76,3 +76,8 @@ docker run --rm licensehub-tests backend/tests/LicenseHub.UnitTests
 ```
 
 El contenedor restaura con lock y compila sin modificar el host. Se verificaron así 16 pruebas unitarias. Integración y seguridad se ejecutan en Windows con PostgreSQL real. Ver estado actual en README y docs/progress.md.
+
+
+## Verificación operacional
+
+En Windows, si Control de aplicaciones bloquea DLL/ejecución de pruebas, conservar esa protección y usar `./tools/test-backend-docker.ps1` con el PostgreSQL de pruebas existente (`licensehub-integration-pg` y archivo privado `.secrets/postgres-test-password`). La herramienta nunca apunta al DB principal. No imprime contraseña ni la pasa como valor en argumentos. Ver [backup/restauración](backup-restore.md), [SMTP configurable](smtp-configuration.md) y [evidencia fase 10](fase10-verification.md).

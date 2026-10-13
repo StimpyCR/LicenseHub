@@ -11,7 +11,7 @@ Estado actualizado el 13 de octubre de 2026. Los párrafos siguientes conservan 
 7. Pagos y notificaciones implementados y verificados. Transporte SMTP real probado localmente; proveedor operativo pendiente de configuración privada.
 8. Dashboard, auditoría por aplicación, búsqueda de clientes, filtros, paginación y CSV implementados; 72 pruebas pasadas y revisión visual ejecutada. Ver docs/admin-reports.md.
 9. Compatibilidad local verificada y contrato v1 congelado. SDK existente: 94 pruebas pasadas sin omisiones; fixtures persistentes por aplicación y HTTPS desde host. Ver docs/sdk-live-integration.md.
-10. Pendiente validación final de seguridad, respaldo/restauración y preparación operativa. No despliegue automático a producción.
+10. En curso: backup AES-GCM y restauración real aislada (39 tablas/DataProtection), integridad y mínimo privilegio verificados; plantilla productiva y Gmail opt-in preparados. Pendientes externos y evidencia en fase10-verification.md. No se habilitó correo ni desplegó a producción.
 
 Verificación Docker (2026-10-11): cliente y motor 29.8.2 operativos. PostgreSQL 17 iniciado en contenedor aislado con contraseña aleatoria fuera del código. Prueba de integración: 1 pasada, 0 fallos y 0 omisiones. La prueba aplica la migración y verifica aislamiento por claves foráneas y unicidad de activación; no prueba aún endpoints ni activaciones concurrentes.
 
