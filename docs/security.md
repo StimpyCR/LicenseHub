@@ -12,6 +12,9 @@ Runtime no debe ser dueño/superusuario/miembro de migrador. docker/runtime-perm
 
 Estado/vigencia efectivos comprobados en servidor; caché de consumidor limitada a cacheUntil (máximo 30 segundos y expiración). Después, denegar si no puede actualizar. Replay de activación no acredita derechos actuales. Pagos/renovaciones requieren autorización y operaciones únicas.
 
-Outbox persistente, deduplicación/reintentos, SMTP STARTTLS con certificado validado; plaintext solo Development/Testing y rechazado en producción. Plantillas texto plano, errores redactados. SMTP al menos una vez puede repetir tras aceptación previa. Gmail no configurado/verificado; solo captura local autorizada.
+Outbox persistente, deduplicación/reintentos, SMTP STARTTLS con certificado validado; plaintext solo Development/Testing y rechazado en producción. Plantillas texto plano, errores redactados. SMTP al menos una vez puede repetir tras aceptación previa. Mailpit integrado y verificado con captura local; Brevo real pendiente y no activado.
 
 Revisión del 13 de octubre: NuGet transitivas y npm audit nivel low sin vulnerabilidades reportadas. No es pentest ni escaneo de SO/imágenes. CI valida pruebas/contrato/build/dependencias sin desplegar. Nunca habilitar SensitiveDataLogging ni imprimir configuración privada. Secretos/PFX/dumps/TRX excluidos de Git. Pendientes reales: custodia externa, monitor/alertas, digests/SBOM/escaneo imágenes, parcheado del host, verificación del entorno productivo y dispositivos PWA. Ver fase10-verification.md.
+
+
+Revisión local posterior: Trivy offline detectó incidencias críticas/altas en PostgreSQL y medias/bajas en bibliotecas del SO API/web. Lockfiles gestionados sin avisos según su base. Ver security-local-review.md; no se reemplazaron imágenes existentes por decisión del operador. Docker Scout opcional no autorizado. Captura Mailpit operativa no implica correo externo.

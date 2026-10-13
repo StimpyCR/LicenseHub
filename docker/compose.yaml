@@ -25,11 +25,42 @@ services:
       DataProtection__KeyPath: /app/.keys
       TrustedProxies__0: 172.29.87.10
       Jobs__Enabled: "true"
+      Smtp__Host: ${LICENSEHUB_SMTP_HOST:-mailpit}
+      Smtp__Port: ${LICENSEHUB_SMTP_PORT:-1025}
+      Smtp__From: ${LICENSEHUB_SMTP_FROM:-notifications@licensehub.example.invalid}
+      Smtp__AllowUnencryptedDevelopment: ${LICENSEHUB_SMTP_ALLOW_UNENCRYPTED_DEVELOPMENT:-true}
     secrets: [db_connection]
     volumes: [data-protection:/app/.keys]
     depends_on:
       postgres: { condition: service_healthy }
-    networks: [private]
+      mailpit: { condition: service_started }
+    networks: [private, mailcapture]
+  mailpit:
+    image: axllent/mailpit:v1.31.5@sha256:94f6b70c1436defae6799d9ac7ff0eeff9540465b842026d5cdb018f1c0234ea
+    user: "65532:65532"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    environment:
+      MP_DATABASE: /tmp/mailpit.db
+      MP_DISABLE_VERSION_CHECK: "true"
+      MP_ALLOWED_HOSTS: localhost,127.0.0.1,mailpit
+      MP_SMTP_DISABLE_RDNS: "true"
+      MP_MAX_MESSAGES: "0"
+      MP_MAX_MESSAGE_SIZE: "5"
+      MP_BLOCK_REMOTE_CSS_AND_FONTS: "true"
+    volumes: [mailpit-data:/tmp]
+    networks: [mailcapture]
+  mailpit-ui:
+    image: nginxinc/nginx-unprivileged:stable-alpine@sha256:56b8272e43a0525f67aed68d1e0794a712d10e3e45a563e118e9a77c817e6f86
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    tmpfs: [/tmp]
+    volumes: ["./mailpit-ui.conf:/etc/nginx/conf.d/default.conf:ro"]
+    ports: ["127.0.0.1:8025:8025"]
+    depends_on: [mailpit]
+    networks: [private, mailcapture]
   web:
     build:
       context: ..
@@ -51,7 +82,10 @@ secrets:
 volumes:
   postgres-data:
   data-protection:
+  mailpit-data:
 networks:
+  mailcapture:
+    internal: true
   private:
     ipam:
       config: [{ subnet: 172.29.87.0/24 }]

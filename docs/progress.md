@@ -11,7 +11,7 @@ Estado actualizado el 13 de octubre de 2026. Los párrafos siguientes conservan 
 7. Pagos y notificaciones implementados y verificados. Transporte SMTP real probado localmente; proveedor operativo pendiente de configuración privada.
 8. Dashboard, auditoría por aplicación, búsqueda de clientes, filtros, paginación y CSV implementados; 72 pruebas pasadas y revisión visual ejecutada. Ver docs/admin-reports.md.
 9. Compatibilidad local verificada y contrato v1 congelado. SDK existente: 94 pruebas pasadas sin omisiones; fixtures persistentes por aplicación y HTTPS desde host. Ver docs/sdk-live-integration.md.
-10. En curso: backup AES-GCM y restauración real aislada (39 tablas/DataProtection), integridad y mínimo privilegio verificados; plantilla productiva y Gmail opt-in preparados. Pendientes externos y evidencia en fase10-verification.md. No se habilitó correo ni desplegó a producción.
+10. En curso: backup AES-GCM y restauración real aislada (39 tablas/DataProtection), integridad y mínimo privilegio verificados; plantilla productiva y proveedor externo opt-in preparados; Mailpit desarrollo añadido/verificado. Pendientes externos y evidencia en fase10-verification.md. No se habilitó correo ni desplegó a producción.
 
 Verificación Docker (2026-10-11): cliente y motor 29.8.2 operativos. PostgreSQL 17 iniciado en contenedor aislado con contraseña aleatoria fuera del código. Prueba de integración: 1 pasada, 0 fallos y 0 omisiones. La prueba aplica la migración y verifica aislamiento por claves foráneas y unicidad de activación; no prueba aún endpoints ni activaciones concurrentes.
 
@@ -50,3 +50,6 @@ Fase 8: 72 pruebas Linux/Docker pasadas (46 integración, 9 seguridad, 17 unitar
 Docker local fase 8 actualizado; HTTPS live/ready, bundles, CSP y PWA verificados. Cuenta principal conservada; entorno sintético y archivos privados retirados.
 
 Fase 9 verificada: 74 pruebas LicenseHub pasadas, con repetición de los dos casos afectados; 94 pruebas SDK pasadas sin omisiones, una activación adicional de B, 83+30 comprobaciones HTTPS y 28 respuestas reales de los cuatro endpoints validadas. Contrato congelado SHA256 989e2e7b382489a32b727c3bb951a1cb313210a6a2cc308c29e4bc23f282f30d y copia SDK sincronizada. StockMini Integration Test UUID dde7150c-d78b-4c30-8258-2441bf4cc9d7, fixtures y credenciales privadas persistentes; cuenta del operador intacta. No se eliminó ni recreó la base principal. Endurecimiento JSON inválido y limitación de Windows documentados. OpenAPI HTTPS normal coincide con checksum; no publicación NuGet ni producción. CI fase 8 c961526 finalizó success.
+
+
+Avance correo/seguridad local: Mailpit persistente, UI loopback, SMTP interno sin salida, 79 pruebas completas aprobadas incluyendo cuatro correos reales capturados. Trivy offline sobre imágenes/lockfiles; PostgreSQL conserva hallazgos críticos/altos pendientes de revisión autorizada. No se exportaron inventarios ni se habilitó Brevo; no se compró dominio. Fase 10 continúa abierta.

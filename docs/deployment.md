@@ -12,4 +12,7 @@ Aplicar migraciones revisadas y --provision-jobs con identidad migradora propiet
 
 Verificar HTTPS y /health/ready antes de tráfico; /health/live no consulta DB. Configurar probes en orquestador/monitor: no se añadieron sondas dependientes de curl inexistente. Dashboard Hangfire cerrado. Monitorizar outbox, errores redactados y fallos backup/SMTP.
 
-Correo opt-in con docker/compose.smtp.yaml; ver smtp-configuration.md. No habilitado mientras remitente/clave no estén verificados. Para producción faltan dominio/TLS, digests/SBOM/escaneo imágenes, custodia DP/backups externa, rol DB efectivo, RPO/RTO/retención/destino/alertas y pruebas PWA en dispositivos. Solicitar autorización explícita sobre configuración concreta antes de desplegar.
+Development captura en Mailpit (mailpit-development.md). Proveedor real Brevo opt-in con docker/compose.smtp.yaml; pendiente dominio/remitente/clave y no activado. Para producción faltan dominio/TLS, digests/SBOM/escaneo imágenes, custodia DP/backups externa, rol DB efectivo, RPO/RTO/retención/destino/alertas y pruebas PWA en dispositivos. Solicitar autorización explícita sobre configuración concreta antes de desplegar.
+
+
+Las imágenes actuales de PostgreSQL tienen hallazgos críticos/altos en el análisis local; no aprobarlas para producción sin revisar/remediar y ensayar restauración. No se alteraron los servicios existentes para corregir CVE. Ver security-local-review.md.

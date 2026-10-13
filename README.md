@@ -71,4 +71,7 @@ Ver [gestión y enrolamiento privado](docs/admin-users.md). Creación pendiente,
 
 ## Preparación operativa
 
-[Fase 10 en curso](docs/fase10-verification.md): respaldo cifrado y restauración real aislada, pruebas de integridad/permisos, guards productivos y plantilla de despliegue separada. Gmail configurable, sin envíos reales. Persisten pendientes de cuenta, infraestructura, custodia externa y escaneo de imágenes autorizado.
+[Fase 10 en curso](docs/fase10-verification.md): respaldo cifrado y restauración real aislada, pruebas de integridad/permisos, guards productivos y plantilla de despliegue separada. Mailpit local operativo con captura verificada; Brevo configurable a futuro, sin envíos reales. Persisten pendientes de cuenta, infraestructura, custodia externa y remediación de hallazgos de imágenes; el análisis se ejecuta localmente, sin exportar SBOM.
+
+
+[Mailpit en desarrollo](docs/mailpit-development.md) disponible en http://127.0.0.1:8025/. [Revisión de seguridad local](docs/security-local-review.md) con Trivy offline, informes detallados privados y pendientes de PostgreSQL.

@@ -1,7 +1,7 @@
 FROM node:24-alpine AS build
 WORKDIR /source
 COPY frontend/licensehub-web/package*.json ./
-RUN npm ci
+RUN npm ci --no-audit --no-fund
 COPY frontend/licensehub-web/ ./
 RUN npm run build
 

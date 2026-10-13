@@ -1,10 +1,11 @@
-param([switch]$SkipBuild)
+param([switch]$SkipBuild, [switch]$WithMailpit)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $docker = Join-Path $env:LOCALAPPDATA 'Programs/DockerDesktop/resources/bin/docker.exe'
-$image = 'licensehub-tests:phase10'
+$image = 'licensehub-tests:phase10-mailpit'
 $previousConnection = $env:LICENSEHUB_TEST_CONNECTION
 $previousResults = $env:LICENSEHUB_CONTRACT_RESULTS_DIR
+$previousMailpit = $env:LICENSEHUB_MAILPIT_TESTS
 try {
     if (!$SkipBuild) {
         & $docker build -f (Join-Path $root 'docker/Dockerfile.tests') -t $image $root
@@ -18,9 +19,15 @@ try {
     $env:LICENSEHUB_CONTRACT_RESULTS_DIR = '/results/contracts'
     $results = Join-Path $root '.tooling/phase10-tests'
     New-Item -ItemType Directory -Path $results -Force | Out-Null
-    & $docker run --rm --env LICENSEHUB_TEST_CONNECTION --env LICENSEHUB_CONTRACT_RESULTS_DIR --mount "type=bind,source=$results,target=/results" $image backend/LicenseHub.slnx --logger 'trx;LogFilePrefix=phase10' --results-directory /results
+    $network = @()
+    if ($WithMailpit) {
+        $env:LICENSEHUB_MAILPIT_TESTS = '1'
+        $network = @('--network', 'licensehub-local_private', '--network', 'licensehub-local_mailcapture')
+    }
+    & $docker run --rm @network --env LICENSEHUB_TEST_CONNECTION --env LICENSEHUB_CONTRACT_RESULTS_DIR --env LICENSEHUB_MAILPIT_TESTS --mount "type=bind,source=$results,target=/results" $image backend/LicenseHub.slnx --logger 'trx;LogFilePrefix=phase10' --results-directory /results
     if ($LASTEXITCODE -ne 0) { throw 'Falló la suite de pruebas.' }
 } finally {
     $env:LICENSEHUB_TEST_CONNECTION = $previousConnection
     $env:LICENSEHUB_CONTRACT_RESULTS_DIR = $previousResults
+    $env:LICENSEHUB_MAILPIT_TESTS = $previousMailpit
 }

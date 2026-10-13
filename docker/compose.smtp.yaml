@@ -1,8 +1,8 @@
-# Complemento opt-in. No se usa en start-local ni configura/envía correo por sí solo.
+# Proveedor real opt-in, posterior a verificar dominio/remitente. No se activa en pruebas.
 services:
   api:
     environment:
-      Smtp__Host: ${LICENSEHUB_SMTP_HOST:-smtp.gmail.com}
+      Smtp__Host: ${LICENSEHUB_SMTP_HOST:-smtp-relay.brevo.com}
       Smtp__Port: ${LICENSEHUB_SMTP_PORT:-587}
       Smtp__From: ${LICENSEHUB_SMTP_FROM:?Define el remitente real verificado}
       Smtp__Username: ${LICENSEHUB_SMTP_USERNAME:?Define la cuenta SMTP exclusiva}
