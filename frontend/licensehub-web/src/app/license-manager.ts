@@ -49,7 +49,13 @@ interface Issued {
       El identificador de negocio lo determina el backend de la aplicación. No uses un ID elegido
       por el navegador.
     </p>
-    <button mat-button [disabled]="busy()" (click)="loadCustomers()">Actualizar clientes</button>
+    <mat-form-field
+      ><mat-label>Buscar cliente</mat-label
+      ><input matInput [formControl]="customerSearch" maxlength="120"
+    /></mat-form-field>
+    <button mat-button [disabled]="busy()" (click)="loadCustomers()">
+      Buscar / actualizar clientes
+    </button>
     @for (customer of customers(); track customer.id) {
       <p>
         {{ customer.subjectId }} · {{ customer.displayName || 'Sin nombre' }} ·
@@ -254,6 +260,8 @@ export class LicenseManager {
   protected readonly managed = signal<License | null>(null);
   protected readonly busy = signal(false);
   protected readonly message = signal('');
+  protected readonly customerSearch = new FormControl('', { nonNullable: true });
+  private customerQuery = '';
   protected readonly state = new FormControl('', { nonNullable: true });
   protected readonly states = ['Pending', 'Active', 'Suspended', 'Expired', 'Revoked', 'Cancelled'];
   protected readonly customerForm = new FormGroup({
@@ -315,12 +323,14 @@ export class LicenseManager {
 
   protected loadCustomers(cursor: string | null = null) {
     if (this.busy()) return;
+    if (!cursor) this.customerQuery = this.customerSearch.value.trim();
     this.busy.set(true);
     this.http
       .get<Page<Customer>>('/api/v1/admin/customers', {
         params: {
           applicationId: this.applicationId(),
           pageSize: 25,
+          ...(this.customerQuery ? { query: this.customerQuery } : {}),
           ...(cursor ? { cursor } : {}),
         },
       })

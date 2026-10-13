@@ -37,8 +37,9 @@ h1 {
   line-height: 1.6;
 }
 .cards {
+  align-items: start;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: 24px;
   margin-top: 40px;
 }

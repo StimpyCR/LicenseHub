@@ -18,13 +18,20 @@ public sealed partial class LicenseOperations(LicenseHubDbContext db, IApplicati
     ICursorProtection cursorProtector) : ILicenseManagement, ILicenseIntegration, ILicenseLifecycle
 {
 
-    public async Task<CustomerPage> CustomersAsync(Guid actor, Guid applicationId, string? cursor, int pageSize, CancellationToken ct)
+    public async Task<CustomerPage> CustomersAsync(Guid actor, Guid applicationId, string? cursor, int pageSize, CancellationToken ct, string? query = null)
     {
         await AllowedAsync(actor, applicationId, "customers:read", ct);
-        var binding = "customers:" + applicationId;
+        query = query?.Trim();
+        if (query?.Length > 120) throw Error("validation_failed", 400);
+        var binding = "customers:" + applicationId + ":" + Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(query ?? "")));
         var offset = Offset(cursor, pageSize, binding);
-        var rows = await db.Set<CustomerRow>().AsNoTracking().Where(x => x.ApplicationId == applicationId)
-            .OrderBy(x => x.CreatedAt).ThenBy(x => x.Id).Skip(offset).Take(pageSize + 1).ToListAsync(ct);
+        var customers = db.Set<CustomerRow>().AsNoTracking().Where(x => x.ApplicationId == applicationId);
+        if (!string.IsNullOrEmpty(query))
+        {
+            var search = query.ToLowerInvariant();
+            customers = customers.Where(x => x.SubjectId.ToLower().Contains(search) || (x.DisplayName != null && x.DisplayName.ToLower().Contains(search)) || (x.Email != null && x.Email.ToLower().Contains(search)));
+        }
+        var rows = await customers.OrderBy(x => x.CreatedAt).ThenBy(x => x.Id).Skip(offset).Take(pageSize + 1).ToListAsync(ct);
         return new(rows.Take(pageSize).Select(View).ToArray(), Next(rows.Count, offset, pageSize, binding));
     }
 

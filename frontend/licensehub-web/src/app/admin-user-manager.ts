@@ -173,6 +173,9 @@ export class AdminUserManager {
     'payments:refund',
     'notifications:read',
     'notifications:manage',
+    'dashboard:read',
+    'audit:read',
+    'licenses:export',
   ];
   protected readonly email = new FormControl('', {
     nonNullable: true,

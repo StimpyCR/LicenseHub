@@ -73,3 +73,7 @@ Ver [gestión y enrolamiento privado](docs/admin-users.md). Creación pendiente,
 ## Pagos y notificaciones
 
 [Pagos manuales y notificaciones](docs/payments-notifications.md) disponibles. Confirmación y renovación atómicas, outbox persistente, alertas y plantillas por aplicación, transporte SMTP y avisos de integración. 67 pruebas pasadas y trece respuestas HTTP validadas. El proveedor SMTP requiere configuración privada; no se simulan envíos.
+
+## Informes administrativos
+
+[Dashboard, auditoría y CSV](docs/admin-reports.md) por aplicación, con permisos delegables y búsqueda de clientes. Exportación sin claves, neutralización de fórmulas y límite explícito de 10 000 filas. 72 pruebas pasadas y quince respuestas HTTP validadas. La PWA avisa de nuevas versiones y permite recargar voluntariamente después de guardar los códigos recién emitidos.

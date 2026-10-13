@@ -12,8 +12,8 @@ public static class LicenseEndpoints
     public static void MapLicenseOperations(this WebApplication app)
     {
         var admin = app.MapGroup("/api/v1/admin").RequireAuthorization("AdminSession").AddEndpointFilter<ManagementErrorFilter>();
-        admin.MapGet("/customers", async (Guid applicationId, string? cursor, int? pageSize, ILicenseManagement service, HttpContext context) =>
-            Results.Ok(await service.CustomersAsync(Actor(context), applicationId, cursor, pageSize ?? 25, context.RequestAborted)));
+        admin.MapGet("/customers", async (Guid applicationId, string? query, string? cursor, int? pageSize, ILicenseManagement service, HttpContext context) =>
+            Results.Ok(await service.CustomersAsync(Actor(context), applicationId, cursor, pageSize ?? 25, context.RequestAborted, query)));
         admin.MapPost("/customers", async (CustomerWrite request, ILicenseManagement service, HttpContext context) =>
         {
             var result = await service.CreateCustomerAsync(Actor(context), Key(context), request, context.TraceIdentifier, context.RequestAborted);

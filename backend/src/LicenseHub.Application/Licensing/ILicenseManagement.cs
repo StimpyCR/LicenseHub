@@ -10,7 +10,7 @@ public interface ICursorProtection
 
 public interface ILicenseManagement
 {
-    Task<CustomerPage> CustomersAsync(Guid actor, Guid applicationId, string? cursor, int pageSize, CancellationToken ct);
+    Task<CustomerPage> CustomersAsync(Guid actor, Guid applicationId, string? cursor, int pageSize, CancellationToken ct, string? query = null);
     Task<CustomerView> CreateCustomerAsync(Guid actor, Guid key, CustomerWrite request, string trace, CancellationToken ct);
     Task<CustomerView> UpdateCustomerAsync(Guid actor, Guid id, Guid key, string etag, CustomerContactWrite request, string trace, CancellationToken ct);
     Task<LicensePage> LicensesAsync(Guid actor, Guid applicationId, string? state, Guid? customerId, string? cursor, int pageSize, CancellationToken ct);

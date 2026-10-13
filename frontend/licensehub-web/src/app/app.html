@@ -7,6 +7,13 @@
   </button>
 </mat-toolbar>
 <main>
+  @if (updateReady()) {
+    <p role="status">
+      Hay una nueva versión. Guarda los códigos de licencia o credenciales recién emitidos y termina
+      tus formularios antes de recargar.
+    </p>
+    <button mat-stroked-button (click)="reloadVersion()">Recargar nueva versión</button>
+  }
   <div class="eyebrow">ADMINISTRACIÓN PRIVADA</div>
   <h1>Tus aplicaciones.<br />Un solo centro de licencias.</h1>
   <p class="intro">Administra el acceso Premium de tus aplicaciones desde un espacio seguro.</p>
@@ -41,10 +48,11 @@
       <mat-card-header><mat-card-title>Acceso administrativo</mat-card-title></mat-card-header>
       <mat-card-content>
         <app-admin-login />
-        <p>El panel está en desarrollo.</p>
+
         <p>
           La gestión de aplicaciones, credenciales, funcionalidades y administradores está
-          disponible según tus permisos. Puedes registrar clientes y emitir o consultar licencias.
+          disponible según tus permisos. Gestiona clientes, licencias, renovaciones, pagos manuales,
+          notificaciones e informes por aplicación.
         </p>
       </mat-card-content>
     </mat-card>

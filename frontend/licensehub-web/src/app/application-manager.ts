@@ -17,6 +17,7 @@ import { ApplicationDetails } from './application-details';
 import { LicenseManager } from './license-manager';
 import { PaymentManager } from './payment-manager';
 import { NotificationManager } from './notification-manager';
+import { AdminReports } from './admin-reports';
 
 interface ApplicationView {
   id: string;
@@ -38,12 +39,16 @@ interface ApplicationView {
     LicenseManager,
     PaymentManager,
     NotificationManager,
+    AdminReports,
   ],
   template: `
     <h3>Aplicaciones</h3>
     <button mat-button [disabled]="busy()" (click)="load()">Actualizar lista</button>
     @for (app of applications(); track app.id) {
       <p>{{ app.name }} · {{ app.slug }} · {{ app.isActive ? 'Activa' : 'Inactiva' }}</p>
+      <button mat-button [disabled]="busy()" (click)="reports.set(app)">
+        Dashboard y auditoría
+      </button>
       <button mat-button [disabled]="busy()" (click)="details.set(app)">
         Credenciales y funcionalidades
       </button>
@@ -84,6 +89,13 @@ interface ApplicationView {
     }
     @if (message()) {
       <p role="status">{{ message() }}</p>
+    }
+    @for (app of reports() ? [reports()!] : []; track app.id) {
+      <h3>Informes · {{ app.name }}</h3>
+      <button mat-button (click)="reports.set(null)">Cerrar informes</button>
+      @defer (on immediate) {
+        <app-admin-reports [applicationId]="app.id" />
+      }
     }
     @if (details(); as app) {
       <h3>{{ app.name }}</h3>
@@ -127,6 +139,7 @@ interface ApplicationView {
   `,
 })
 export class ApplicationManager {
+  protected readonly reports = signal<ApplicationView | null>(null);
   protected readonly notifications = signal<ApplicationView | null>(null);
   protected readonly billing = signal<ApplicationView | null>(null);
   protected readonly licensing = signal<ApplicationView | null>(null);

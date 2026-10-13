@@ -1,5 +1,6 @@
 import { Component, effect, inject, signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { SwUpdate } from '@angular/service-worker';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -23,6 +24,8 @@ import { AdminLogin } from './admin-login';
   templateUrl: './app.html',
 })
 export class App {
+  private readonly updates = inject(SwUpdate);
+  protected readonly updateReady = signal(false);
   private readonly availabilityService = inject(AvailabilityService);
   private readonly refreshTrigger = new Subject<void>();
   protected readonly autoRefresh = new FormControl(false, { nonNullable: true });
@@ -38,6 +41,11 @@ export class App {
     { initialValue: 'checking' },
   );
   constructor() {
+    if (this.updates.isEnabled) {
+      this.updates.versionUpdates.pipe(takeUntilDestroyed()).subscribe((event) => {
+        if (event.type === 'VERSION_READY') this.updateReady.set(true);
+      });
+    }
     effect(() => {
       const theme = this.darkMode() ? 'dark' : 'light';
       document.documentElement.style.colorScheme = theme;
@@ -46,5 +54,8 @@ export class App {
   }
   protected refresh() {
     this.refreshTrigger.next();
+  }
+  protected reloadVersion() {
+    window.location.reload();
   }
 }

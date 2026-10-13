@@ -1,12 +1,17 @@
 # Estado por fases
 
-1. Arquitectura/modelo/contrato: diseñados; contrato ampliado y parser/fixtures ejecutados. Baseline de desarrollo guardado; aún no hay release v1 publicada ni validación con generador C# del SDK.
-2. Base del proyecto: solución .NET 10, separación de capas, persistencia EF/Identity/PostgreSQL y migración inicial, Angular Material/PWA y Dockerfiles/compose. Compilación y verificaciones locales documentadas en README. Migración aplicada y prueba de integración pasada en PostgreSQL 17 mediante Docker. Imágenes API/web construidas y Compose completo iniciado: sondas live/ready saludables por HTTPS, recursos Angular/PWA servidos y usuarios de runtime no root verificados. Scripts de arranque y verificación en tools/. Fase 2 verificada localmente; no constituye validación productiva.
-3. En curso: bootstrap privado de SuperAdmin implementado como CLI, con contraseña Identity, TOTP verificado, transacción/lock PostgreSQL, rechazo de reinicialización y auditoría. Login/MFA HTTP, sesión persistente, CSRF y logout implementados y probados. Panel conectado con formularios reactivos. Cuenta real inicializada mediante el flujo privado y acceso confirmado por el operador. Incorporados esquema Bearer de integración, validación persistente de credenciales y permisos administrativos emparejados por aplicación. Recuperación operativa privada implementada. Pendiente aplicar políticas a los futuros endpoints de licencias. Gestión/emisión de credenciales corresponde a fase 4.
-4. API y formularios de aplicaciones, credenciales y catálogo Premium implementados, con permisos, CSRF, ETag, idempotencia y auditoría. Revisión autenticada realizada con aplicación y cuenta sintéticas en PostgreSQL aislado: aplicaciones, credenciales, catálogo y usuarios. No se utilizaron secretos del operador.
-5. Clientes, emisión/activación/consulta y formularios implementados y verificados localmente; ver cierre de fase 5 más abajo. 6–8: renovaciones/revocaciones, pagos/outbox/correo y panel completo pendientes.
-9. Contrato y guía permiten diseño paralelo del SDK en repositorio independiente; pruebas HTTP de compatibilidad pendientes de API real.
-10. CI preparado, guías operativas propuestas; pendiente ejecutar workflow en GitHub, pruebas completas de seguridad y restauración. No despliegue a producción.
+Estado actualizado el 12 de octubre de 2026. Los párrafos siguientes conservan el historial de verificación de cada incremento.
+
+1. Arquitectura, modelo y contrato v1 diseñados. API versionada y pruebas HTTP reales; publicación de release y comprobación con generador del SDK corresponden a fase 9.
+2. Base .NET/PostgreSQL/Angular/Docker implementada y verificada localmente.
+3. Autenticación privada, MFA, recuperación, sesiones, CSRF, scopes y permisos por aplicación implementados. Aplicados a todos los endpoints de negocio disponibles. Validación productiva pendiente de fase 10.
+4. Aplicaciones, credenciales, rotación/revocación, catálogo y delegados implementados y verificados con datos sintéticos.
+5. Clientes, emisión/activación/consulta de licencias implementados y verificados.
+6. Renovación, estados e historial inmutable implementados y verificados.
+7. Pagos y notificaciones implementados y verificados. Transporte SMTP real probado localmente; proveedor operativo pendiente de configuración privada.
+8. Dashboard, auditoría por aplicación, búsqueda de clientes, filtros, paginación y CSV implementados; 72 pruebas pasadas y revisión visual ejecutada. Ver docs/admin-reports.md.
+9. Pendiente cierre de entrega del contrato para LicenseHub.SDK; el SDK permanece en repositorio separado.
+10. Pendiente validación final de seguridad, respaldo/restauración y preparación operativa. No despliegue automático a producción.
 
 Verificación Docker (2026-10-11): cliente y motor 29.8.2 operativos. PostgreSQL 17 iniciado en contenedor aislado con contraseña aleatoria fuera del código. Prueba de integración: 1 pasada, 0 fallos y 0 omisiones. La prueba aplica la migración y verifica aislamiento por claves foráneas y unicidad de activación; no prueba aún endpoints ni activaciones concurrentes.
 
@@ -40,3 +45,6 @@ Fase 7 implementada y verificada localmente: pagos manuales transaccionales, con
 
 GitHub Actions remoto verificado: CI de df27a0b y 4f51d36 finalizó success; la corrección de ruta absoluta de contract-results está comprobada.
 Docker local actualizado con NotificationOutboxDeduplication y trabajos persistentes provisionados. HTTPS live/ready, frontend, bundles, CSP y PWA verificados. Cuenta principal conservada; entorno sintético y sus secretos retirados.
+
+Fase 8: 72 pruebas Linux/Docker pasadas (46 integración, 9 seguridad, 17 unitarias), quince respuestas HTTP compatibles, formato C# y contrato correctos. Angular lint/build pasan con aviso de presupuesto 523,78 kB. Revisión aislada: dashboard, búsqueda, descarga CSV, auditoría y actualización PWA; móvil sin desbordamiento. GitHub Actions de fase 7 (78bbe60) finalizó success: https://github.com/StimpyCR/LicenseHub/actions/runs/38344689286.
+Docker local fase 8 actualizado; HTTPS live/ready, bundles, CSP y PWA verificados. Cuenta principal conservada; entorno sintético y archivos privados retirados.

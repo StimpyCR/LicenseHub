@@ -525,12 +525,18 @@ paths:
       tags:
       - Administration
       operationId: listCustomers
+      description: Búsqueda parcial literal sin distinguir mayúsculas en subjectId, nombre o correo. query máximo 120 caracteres; cursor vinculado al filtro.
       security:
       - AdminSession: []
       parameters:
       - $ref: '#/components/parameters/ApplicationId'
       - $ref: '#/components/parameters/Cursor'
       - $ref: '#/components/parameters/PageSize'
+      - name: query
+        in: query
+        schema:
+          type: string
+          maxLength: 120
       responses:
         '200':
           description: Clientes de aplicación autorizada.
@@ -697,12 +703,19 @@ paths:
       tags:
       - Administration
       operationId: listAuditLogs
+      description: Permiso audit:read; applicationId obligatorio. Excluye auditoría global. Filtro action exacto, máximo 100 caracteres.
       security:
       - AdminSession: []
       parameters:
       - $ref: '#/components/parameters/ApplicationId'
       - $ref: '#/components/parameters/Cursor'
       - $ref: '#/components/parameters/PageSize'
+      - name: action
+        in: query
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 100
       responses:
         '200':
           description: Auditoría de aplicación autorizada.
@@ -728,6 +741,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '429':
           $ref: '#/components/responses/RateLimited'
         '503':
@@ -3529,6 +3544,9 @@ components:
           - payments:refund
           - notifications:read
           - notifications:manage
+          - dashboard:read
+          - audit:read
+          - licenses:export
     AdminUserCreate:
       type: object
       additionalProperties: false

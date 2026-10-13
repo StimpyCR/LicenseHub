@@ -13,7 +13,7 @@ namespace LicenseHub.Infrastructure.Administration;
 
 public sealed class AdminUsers(LicenseHubDbContext db, UserManager<AdminUser> users, TimeProvider clock) : IAdminUsers
 {
-    private static readonly string[] Capabilities = ["applications:read", "credentials:read", "credentials:manage", "features:read", "features:manage", "customers:read", "customers:manage", "licenses:read", "licenses:issue", "licenses:renew", "licenses:suspend", "licenses:revoke", "licenses:cancel", "licenses:reactivate", "payments:read", "payments:manage", "payments:confirm", "payments:reject", "payments:refund", "notifications:read", "notifications:manage"];
+    private static readonly string[] Capabilities = ["applications:read", "credentials:read", "credentials:manage", "features:read", "features:manage", "customers:read", "customers:manage", "licenses:read", "licenses:issue", "licenses:renew", "licenses:suspend", "licenses:revoke", "licenses:cancel", "licenses:reactivate", "payments:read", "payments:manage", "payments:confirm", "payments:reject", "payments:refund", "notifications:read", "notifications:manage", "dashboard:read", "audit:read", "licenses:export"];
     public async Task<AdminUserPage> ListAsync(Guid actor, string? cursor, int size, CancellationToken ct)
     {
         await SuperAsync(actor);
