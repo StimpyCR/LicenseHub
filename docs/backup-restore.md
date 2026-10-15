@@ -1,5 +1,7 @@
 # Respaldo y restauración
 
+Actualización del 15 de octubre: [migración local ejecutada](local-migration-2026-10-15.md). La herramienta detecta `.secrets/compose/active-database.json` y usa el clúster activo tanto para Backup como para RestoreTest sin destino explícito; falla si el contenedor no coincide con el ID conservado. RestoreTest sigue creando únicamente bases aisladas con sufijo `_tests`. El origen permanece detenido y conservado. No quitar el marcador para solucionar un error de respaldo: podría copiar la base antigua. El destino opcional `-RestoreContainer` sigue limitado a contenedores candidatos locales.
+
 Ensayo local ejecutado el 13 de octubre de 2026 con PostgreSQL 17 existente, sin eliminar ni recrear licensehub. Requiere PowerShell 7 sobre .NET 8 o superior y Docker Desktop. La herramienta está fijada a los contenedores Development locales; no es un servicio general de backup productivo.
 
 ```powershell

@@ -1,6 +1,6 @@
 # Propuesta revisable: PostgreSQL con locale builtin
 
-15 de octubre de 2026. Estado: **probada en aislamiento, pendiente de aceptación y migración autorizada**. No cambia la base actual ni autoriza producción. Complementa postgres-candidate.md y postgres-migration-runbook.md.
+15 de octubre de 2026. Estado actual: **aceptada y migrada en LOCAL**, tras autorización explícita. Ver [informe de ejecución](local-migration-2026-10-15.md). La evidencia de propuesta/ensayos siguiente se conserva como historial; no autoriza producción. Complementa postgres-candidate.md y postgres-migration-runbook.md.
 
 ## Alternativa concreta
 
@@ -33,7 +33,9 @@ Identificadores UUID, hashes, comparación exacta de subjectId, estados, claves 
 
 Durante el corte, los usuarios deben reiniciar listados/paginación y no continuar offsets/cursors previos sobre el nuevo orden. La paginación actual no ofrece un snapshot entre despliegues. No se cambió silenciosamente el contrato congelado ni su SHA256.
 
-## Migración local propuesta, todavía no ejecutada
+## Migración local: propuesta ejecutada posteriormente
+
+El usuario autorizó la migración local bajo condiciones explícitas. Se ejecutó con backup fresco, otro volumen, verificaciones y ensayo de retorno. El [informe del 15 de octubre](local-migration-2026-10-15.md) sustituye el estado pendiente descrito originalmente a continuación; producción sigue sin autorización.
 
 1. Obtener autorización para iniciar/pausar servicios locales y cambiar su conexión. Registrar configuración/IDs y estado originales de forma privada.
 2. Pausar API/workers que escriben. Iniciar solo el PostgreSQL de origen si estaba detenido. Crear **backup cifrado fresco** y verificar integridad; el archivo del ensayo no sustituye ese paso.

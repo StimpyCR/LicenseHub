@@ -1,6 +1,6 @@
 # PostgreSQL: preparación de migración con retorno
 
-Estado: procedimiento propuesto para revisión; no ejecuta un cambio del servidor principal. La Fase 10 permanece abierta. No usar una candidata con hallazgos críticos/altos sin resolver o con diferencias de locale no aceptadas.
+Estado: procedimiento general. La migración **local** autorizada se ejecutó el 15 de octubre; ver [informe y retorno comprobado](local-migration-2026-10-15.md). Producción no fue migrada. La Fase 10 permanece abierta. No usar una candidata con hallazgos críticos/altos sin resolver o con diferencias de locale no aceptadas.
 
 ## Condiciones previas
 

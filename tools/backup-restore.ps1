@@ -6,11 +6,23 @@ $docker = Join-Path $env:LOCALAPPDATA 'Programs/DockerDesktop/resources/bin/dock
 $private = Join-Path $root '.secrets/backups'
 $keyPath = Join-Path $root '.secrets/backup-key'
 $pg = 'licensehub-local-postgres-1'
+$api = 'licensehub-local-api-1'
+$activePath = Join-Path $root '.secrets/compose/active-database.json'
+if (!$RestoreContainer -and (Test-Path -LiteralPath $activePath)) {
+    $active = Get-Content -LiteralPath $activePath -Raw | ConvertFrom-Json
+    if ($active.container -notmatch '^licensehub-postgres-candidate-[a-f0-9]{32}-tests$' -or
+        $active.database -ne 'licensehub' -or $active.apiContainer -ne 'licensehub-local-next-api-next-1') {
+        throw 'Marcador de base activa no válido; no se operará silenciosamente sobre el origen antiguo.'
+    }
+    $actualId = & $docker inspect $active.container --format '{{.Id}}'
+    if ($LASTEXITCODE -ne 0 -or $actualId -ne $active.containerId) { throw 'Cambió el contenedor activo validado.' }
+    $pg = $active.container
+    $api = $active.apiContainer
+}
 if ($RestoreContainer) {
     if ($Mode -ne 'RestoreTest' -or $RestoreContainer -notmatch '^licensehub-postgres-candidate-[a-f0-9]{32}-tests$') { throw 'Solo se permite un destino candidato aislado para restauración.' }
     $pg = $RestoreContainer
 }
-$api = 'licensehub-local-api-1'
 function Docker {
     $output = & $docker @args
     if ($LASTEXITCODE -ne 0) { throw 'La operación Docker falló; consulta su diagnóstico sin publicar secretos.' }
@@ -39,7 +51,11 @@ $id = [Guid]::NewGuid().ToString('N')
 $scratch = Join-Path $private "work-$id"
 Protect-Directory $scratch
 $containerDirectory = "/tmp/licensehub-backup-$id"
-if ($RestoreContainer) { $containerDirectory = "/var/lib/postgresql/data/licensehub-restore-$id" }
+if ($RestoreContainer -or $pg -ne 'licensehub-local-postgres-1') {
+    # Docker Desktop no copia de forma fiable desde tmpfs con este backend.
+    # Directorio privado efímero en el volumen nuevo; finally retira solo este directorio.
+    $containerDirectory = "/var/lib/postgresql/data/licensehub-restore-$id"
+}
 $containerDump = "$containerDirectory/database.dump"
 $target = "licensehub_restore_${id}_tests"
 $started = [DateTimeOffset]::UtcNow

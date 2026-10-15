@@ -2,6 +2,10 @@ param([switch]$SkipBuild)
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $projectRoot = Split-Path $PSScriptRoot -Parent
+if (Test-Path -LiteralPath (Join-Path $projectRoot '.secrets/compose/active-database.json')) {
+    & (Join-Path $PSScriptRoot 'start-migrated-local.ps1')
+    return
+}
 Push-Location $projectRoot
 try {
     $dockerCommand = Get-Command docker -ErrorAction SilentlyContinue

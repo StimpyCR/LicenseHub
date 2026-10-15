@@ -2,6 +2,8 @@
 
 Estado: fases 1–9 implementadas y compatibilidad SDK v1 verificada. Fase 10 en curso: backup cifrado/restauración real, revisión de seguridad y preparación operativa. No se desplegó a producción. El SDK permanece en su propio repositorio.
 
+El 15 de octubre se completó la [migración local de PostgreSQL con respaldo y reversión comprobados](docs/local-migration-2026-10-15.md). Iniciar esta instalación con `tools/start-local.ps1 -SkipBuild`; conserva el origen y utiliza la base migrada. Acceso local: https://localhost:8443/.
+
 ## Entregables
 
 - `contracts/openapi/licensehub-v1.yaml`: contrato de integración v1.
