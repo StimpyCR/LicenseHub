@@ -22,11 +22,19 @@ foreach ($image in $Images) {
     $slug = $image -replace '[^A-Za-z0-9._-]', '-'
     $archive = Join-Path $directory ($slug + '-' + [Guid]::NewGuid().ToString('N') + '.tar')
     $output = Join-Path $directory ($slug + '.json')
+    $evidenceFile = Join-Path $directory ($slug + '.evidence.json')
+    $databaseBefore = Get-Content (Join-Path $cache 'db/metadata.json') -Raw | ConvertFrom-Json
     try {
         Docker image save --output $archive $image
+        $exportedId = (& $docker image inspect $image --format '{{.Id}}').Trim()
+        if ($LASTEXITCODE -ne 0 -or $exportedId -ne $id) { throw 'La etiqueta cambió durante la exportación; repetir escaneo.' }
         # Nunca socket ni registry lookup: archivo local, sin red, sin telemetría.
         Docker run --rm --label licensehub.purpose=local-security-scan --network none --read-only --cap-drop ALL --security-opt no-new-privileges --user 65532:65532 --tmpfs /tmp:mode=1777 --mount "type=bind,source=$cache,target=/cache,readonly" --mount "type=bind,source=$archive,target=/image.tar,readonly" --mount "type=bind,source=$directory,target=/reports" $scanner image --input /image.tar --cache-dir /cache --cache-backend memory --offline-scan --skip-db-update --skip-java-db-update --skip-check-update --skip-vex-repo-update --disable-telemetry --skip-version-check --scanners vuln --format json --output "/reports/$slug.json"
         $report = Get-Content -LiteralPath $output -Raw | ConvertFrom-Json
+        $databaseAfter = Get-Content (Join-Path $cache 'db/metadata.json') -Raw | ConvertFrom-Json
+        if ($databaseAfter.UpdatedAt -ne $databaseBefore.UpdatedAt) { throw 'Los avisos cambiaron durante el escaneo; repetir.' }
+        $evidence = @{ schemaVersion = 1; imageId = $id; reportSha256 = (Get-FileHash -LiteralPath $output -Algorithm SHA256).Hash.ToLowerInvariant(); databaseUpdatedAt = $databaseBefore.UpdatedAt; scannedAt = [DateTimeOffset]::UtcNow.ToString('O'); network = 'none'; scanner = $scanner }
+        [IO.File]::WriteAllText($evidenceFile, ($evidence | ConvertTo-Json))
         $vulnerabilities = @($report.Results | ForEach-Object { if ($_.Vulnerabilities) { $_.Vulnerabilities } })
         $counts = @{}
         foreach ($severity in @('CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'UNKNOWN')) { $counts[$severity] = @($vulnerabilities | Where-Object Severity -eq $severity).Count }

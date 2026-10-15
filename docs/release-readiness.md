@@ -1,0 +1,45 @@
+# Estado de preparación para producción
+
+15 de octubre de 2026. Las fases 1–9 están verificadas; Fase 10 sigue abierta. Este documento reúne los bloqueos actuales para evitar confundir avances históricos con un despliegue aprobado. No se creó una cuenta de alojamiento ni se contrató servicio alguno.
+
+| Elemento | Evidencia actual | Condición para cerrar |
+| --- | --- | --- |
+| Backend, seguridad y correo local | 90/90 pruebas .NET, sin omisiones; PostgreSQL/Mailpit aislados | Repetir verificaciones sobre el artefacto elegido para desplegar |
+| CI del control de roles | c3ffa60: success, run 38762135571 | Mantener CI verde en la revisión final |
+| SDK/API v1 | Contrato congelado y compatible; 94 pruebas SDK reales en Fase 9 | No cambiar el contrato sin evolución explícita |
+| Imagen PostgreSQL segura y compatible | Debian conserva locales pero tiene 1 crítica/61 altas; Alpine 0 críticas/altas y 1 media, pero cambia 3/6 vectores | Seleccionar alternativa mantenida y resolver/documentar compatibilidad antes de migrar |
+| Control de escaneo | Informe ligado a imagen exportada/hash/avisos, 14 pruebas de herramienta y comprobación con dos imágenes reales | Ejecutarlo con informes recientes para cada imagen concreta |
+| Rol runtime | Readiness productiva rechaza privilegios administrativos directos/alcanzables | Provisionar y verificar rol mínimo en la DB del destino; no usar el superusuario Development |
+| Alojamiento y dominio/TLS | Usuario aún no eligió proveedor; plantilla endurecida preparada | Elegir destino, permisos, host real y certificados; verificar HTTPS y readiness allí |
+| Backups | AES-GCM, manipulación/clave incorrecta y restauración real verificadas localmente | Elegir custodia independiente, destino externo, frecuencia, retención, alertas y ensayar recuperación en destino |
+| PWA en dispositivos | Recursos, política de caché y responsive revisados | Ejecutar protocolo en dispositivos/navegadores reales y registrar resultados |
+| Correo externo | Mailpit operativo para pruebas | Brevo/remitente autenticado pospuestos por decisión del usuario; no activar ni contratar dominio ahora |
+
+Las 14 pruebas Python son adicionales a las 90 .NET, no una nueva ejecución de estas últimas ni del SDK. El control de escaneo no es una autorización de despliegue ni sustituye compatibilidad, revisión operativa, restauración o pentest. Ningún inventario privado se publica en CI.
+
+## Secuencia para completar la salida
+
+1. Resolver el artefacto PostgreSQL aceptable. No adoptar Alpine solo por el contador de CVE ni mezclar paquetes inestables para ocultar hallazgos. Si se propone cambiar el ordenamiento, presentar su alcance y regresión antes de la sustitución.
+2. Elegir alojamiento y almacenamiento de backups; preparar configuración privada real sobre las plantillas existentes. No inventar credenciales, dominio ni una política de retención acordada.
+3. Ensayar en instalación nueva: migraciones con propietario separado, runtime mínimo, restauración, TLS/DP y monitorización/readiness. Medir recuperación; las mediciones locales no son un SLA.
+4. Ejecutar las pruebas PWA físicas y documentarlas. Solicitar autorización final sobre imagen/configuración/migración concretas; no desplegar automáticamente.
+
+No hay un cambio de producción autorizado ni una migración en curso. El procedimiento de corte/retorno está en postgres-migration-runbook.md. Se conserva la base anterior: después de permitir escrituras en un destino nuevo no se puede volver sin más al volumen antiguo.
+
+## Criterios de alojamiento económico
+
+Hace falta almacenamiento persistente para PostgreSQL y Data Protection, una instancia capaz de mantener Hangfire activo, conectividad segura a DB, backups recuperables, secretos privados y monitorización. Un sistema de archivos efímero no sirve como única ubicación de esas claves o datos. El tamaño se decide con mediciones de memoria/carga y crecimiento, no con una promesa de capacidad sin ensayo.
+
+Para demostraciones gratuitas se pueden evaluar plataformas con suspensión; el retraso de trabajos/notificaciones debe ser aceptado explícitamente. No equivalen a operación continua: [Render documenta suspensión de servicios Free y expiración de PostgreSQL Free a 30 días](https://render.com/docs/free). Su [FAQ explica el filesystem efímero por defecto](https://render.com/docs/faq).
+
+Para un piloto continuo, una opción a evaluar es un VPS económico con almacenamiento persistente: permite usar Compose y controlar roles, a cambio de asumir parches, firewall, monitorización y recuperación. [Hetzner publica opciones y almacenamiento Cloud](https://www.hetzner.com/cloud/cost-optimized/) y su [documentación de backups/snapshots](https://docs.hetzner.com/cloud/servers/backups-snapshots/overview/). No es una selección ni un presupuesto: región, IPv4, impuestos, backups, almacenamiento externo y transferencia pueden alterar el costo final. Los snapshots del servidor no sustituyen el backup lógico cifrado y la prueba de recuperación independiente.
+
+No se contrató ni recomendó un plan concreto como suficiente para producción. Cuando el usuario elija destino/presupuesto se verificará su oferta vigente y se ajustará el despliegue; no se habilitan exports de inventario para ello.
+
+## Protocolo PWA pendiente en dispositivos físicos
+
+Registrar por Windows, Android, macOS, iOS y Linux: modelo/dispositivo, SO, navegador/versión, revisión desplegada, fecha, resultado y limitaciones. Usar HTTPS válido y cuentas/fixtures dedicadas; no fotografiar claves de licencia, secretos o QR de MFA.
+
+En cada entorno comprobar: carga inicial, instalación cuando el navegador la permita, apertura instalada, login/MFA, navegación responsive, expiración de sesión/logout, actualización voluntaria conservando trabajo sin guardar y recuperación tras cerrar/reabrir. Registrar como no soportada/pendiente una función que el navegador no ofrezca; no simular un aprobado.
+
+Con red desconectada, comprobar que la interfaz muestra indisponibilidad y no autoriza operaciones ni presenta como actuales derechos cacheados. Reconectar y verificar sesión/estado del servidor. Las respuestas /api, /health y datos administrativos no deben servirse desde la caché PWA. Las pruebas de recursos o emulación responsive no acreditan estos resultados físicos. El sistema de licencias requiere conexión conforme al contrato; no ofrece activación Premium offline.

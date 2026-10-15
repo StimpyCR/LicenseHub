@@ -75,3 +75,5 @@ Ver [gestión y enrolamiento privado](docs/admin-users.md). Creación pendiente,
 
 
 [Mailpit en desarrollo](docs/mailpit-development.md) disponible en http://127.0.0.1:8025/. [Revisión de seguridad local](docs/security-local-review.md) con Trivy offline, informes detallados privados y pendientes de PostgreSQL.
+
+Estado actual y condiciones concretas de cierre: [preparación para producción](docs/release-readiness.md). Comprobación local de artefactos: [control de escaneo e identidad](docs/image-security-gate.md). Fase 10 abierta; no hay despliegue productivo autorizado.
