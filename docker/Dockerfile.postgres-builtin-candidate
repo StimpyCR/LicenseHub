@@ -1,0 +1,6 @@
+# Candidata aislada; no modifica compose.yaml ni reutiliza el volumen actual.
+FROM postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24
+RUN apk upgrade --no-cache && rm /usr/local/bin/gosu
+# Política propuesta: requiere revisión del cambio respecto a libc en_US.utf8.
+ENV POSTGRES_INITDB_ARGS="--locale-provider=builtin --locale=C.UTF-8 --encoding=UTF8"
+USER postgres

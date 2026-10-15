@@ -7,7 +7,7 @@
 | Backend, seguridad y correo local | 90/90 pruebas .NET, sin omisiones; PostgreSQL/Mailpit aislados | Repetir verificaciones sobre el artefacto elegido para desplegar |
 | CI del control de roles | c3ffa60: success, run 38762135571 | Mantener CI verde en la revisión final |
 | SDK/API v1 | Contrato congelado y compatible; 94 pruebas SDK reales en Fase 9 | No cambiar el contrato sin evolución explícita |
-| Imagen PostgreSQL segura y compatible | Debian conserva locales pero tiene 1 crítica/61 altas; Alpine 0 críticas/altas y 1 media, pero cambia 3/6 vectores | Seleccionar alternativa mantenida y resolver/documentar compatibilidad antes de migrar |
+| Imagen PostgreSQL y política de texto | Nueva candidata actualizada builtin: cero hallazgos reportados, 90 pruebas y restauración real; orden y 54 mapeos Unicode cambian respecto al origen | Revisar/aceptar postgres-builtin-proposal.md y autorizar migración local antes de sustituir; origen sigue sin remediar |
 | Control de escaneo | Informe ligado a imagen exportada/hash/avisos, 14 pruebas de herramienta y comprobación con dos imágenes reales | Ejecutarlo con informes recientes para cada imagen concreta |
 | Rol runtime | Readiness productiva rechaza privilegios administrativos directos/alcanzables | Provisionar y verificar rol mínimo en la DB del destino; no usar el superusuario Development |
 | Alojamiento y dominio/TLS | Usuario aún no eligió proveedor; plantilla endurecida preparada | Elegir destino, permisos, host real y certificados; verificar HTTPS y readiness allí |
@@ -19,7 +19,7 @@ Las 14 pruebas Python son adicionales a las 90 .NET, no una nueva ejecución de 
 
 ## Secuencia para completar la salida
 
-1. Resolver el artefacto PostgreSQL aceptable. No adoptar Alpine solo por el contador de CVE ni mezclar paquetes inestables para ocultar hallazgos. Si se propone cambiar el ordenamiento, presentar su alcance y regresión antes de la sustitución.
+1. Revisar [la propuesta PostgreSQL builtin probada](postgres-builtin-proposal.md). No adoptar Alpine solo por el contador de CVE ni mezclar paquetes inestables para ocultar hallazgos. Se documentaron ordenamiento y variaciones Unicode; la sustitución sigue pendiente de aceptación/autorización.
 2. Elegir alojamiento y almacenamiento de backups; preparar configuración privada real sobre las plantillas existentes. No inventar credenciales, dominio ni una política de retención acordada.
 3. Ensayar en instalación nueva: migraciones con propietario separado, runtime mínimo, restauración, TLS/DP y monitorización/readiness. Medir recuperación; las mediciones locales no son un SLA.
 4. Ejecutar las pruebas PWA físicas y documentarlas. Solicitar autorización final sobre imagen/configuración/migración concretas; no desplegar automáticamente.

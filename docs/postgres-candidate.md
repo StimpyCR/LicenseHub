@@ -94,3 +94,7 @@ Revisión estática de backend/src, excluyendo bin/obj: no se encontraron llamad
 El seguimiento Debian consultado sigue indicando vulnerable el componente crítico. No se suprimen hallazgos ni se marca como falso positivo porque el proveedor le asigne una severidad distinta. Una imagen libre de hallazgos críticos/altos en el ensayo anterior tampoco acredita todas las propiedades del sistema.
 
 Decisión mantenida: conservar el origen y no mezclar paquetes de ramas inestables ni construir un parche privado de una biblioteca del servidor para forzar un contador a cero. Para avanzar a una sustitución habrá que obtener una base mantenida compatible y corregida, o proponer explícitamente una política de ordenamiento alternativa y sus efectos sobre listados/cursor antes de pedir autorización de migración. El contrato JSON y las consultas actuales no cambiaron.
+
+## Propuesta posterior probada: proveedor builtin
+
+Se preparó una imagen Alpine con actualizaciones estables y builtin C.UTF-8 explícito. Scan sin red: cero hallazgos reportados; restauración real 39 tablas/1 DP; 90 pruebas pasadas sin omisiones. Comparación entre imágenes con builtin: seis vectores y huella SHA256 de lower/upper sobre todos los escalares Unicode representables coinciden. Comparación contra la política original: orden distinto y 54 puntos de código con mapeo distinto. No se adoptó en origen. Ver [propuesta y límites de compatibilidad](postgres-builtin-proposal.md) antes de autorizar cualquier corte.
