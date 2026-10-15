@@ -56,3 +56,5 @@ Avance correo/seguridad local: Mailpit persistente, UI loopback, SMTP interno si
 
 
 Candidata PostgreSQL evaluada sin tocar origen: scan offline 0 críticas/altas, restauración de 39 tablas y 79 pruebas pasadas. Ordenación glibc/musl diferente: decisión/migración pendiente, no reemplazo autorizado. Prueba Mailpit corregida para buzón preexistente sin limpiar capturas. Ver postgres-candidate.md.
+
+Avance 15 de octubre: documentado ensayo Debian/glibc previo (1 crítica/63 altas; tres vectores compatibles), wrapper de comparación aislada y procedimiento de migración/retorno sin pérdida silenciosa. Variante con actualizaciones estables preparada pero no construida/escaneada: motor Docker Linux no disponible al intentar continuar. Sintaxis PowerShell y diff verificados. No nueva suite aprobada ni cambios de datos/servicios; fase 10 abierta.

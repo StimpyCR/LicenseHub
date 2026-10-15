@@ -1,0 +1,16 @@
+# Ensayo aislado: conserva la imagen y locales glibc del servidor actual.
+# No sustituye compose.yaml ni modifica el volumen existente.
+FROM postgres:17@sha256:2d2b8998d31037bf721cfdf764d76ba74171b4fab3431b7f72c27c56ddbdf9e3 AS base
+# El entrypoint oficial admite USER postgres sin el helper de cambio de usuario.
+# La eliminación afecta al filesystem final, no a las capas históricas.
+RUN rm /usr/local/bin/gosu
+USER postgres
+
+# Variante experimental: solo paquetes de los repositorios configurados en la base.
+# Resolver y escanear localmente; no es un artefacto de producción reproducible.
+FROM base AS patched
+USER root
+RUN apt-get update \
+    && apt-get upgrade -y --no-install-recommends \
+    && rm -rf /var/lib/apt/lists/*
+USER postgres
