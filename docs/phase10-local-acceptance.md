@@ -26,6 +26,8 @@ API ejecuta realmente `ASPNETCORE_ENVIRONMENT=Production`, AllowedHosts explíci
 
 El ensayo usa el template nginx productivo y los controles reales del artefacto; no acredita un host cloud, DNS/certificado público ni la instalación de Compose en otro proveedor. No se cambió la instalación principal en este incremento: estos artefactos y el arreglo responsive se verificaron en la instalación sintética. El panel principal sigue en https://localhost:8443/ con su configuración conservada.
 
+En una revisión final del entorno principal, readiness agotó el timeout de 15 segundos después de ejecutar los ensayos. Sin reiniciar ni modificar esa instalación, una consulta posterior devolvió 200 Healthy y la verificación completa habitual volvió a pasar (live/ready, Angular, bundles, CSP y recursos PWA). El diagnóstico privado registró cancelación de operación; no se estableció una causa ni se atribuye automáticamente a un defecto o a carga. Registrar/monitorizar recurrencia y medir recursos/carga en el destino elegido; los aprobados funcionales locales no certifican capacidad ni SLA. Los ensayos sintéticos anteriores se detuvieron conservando contenedores/volúmenes y el ensayo final sigue separado del principal.
+
 Durante preparación se detectaron y corrigieron dos fallos del arnés: Docker Desktop no publicaba el puerto de un proxy conectado únicamente a red interna y una aserción trataba una cabecera PowerShell como escalar. Se conservó evidencia de los intentos; no se reportaron como aprobados. La ejecución final completa pasó.
 
 ## Seguridad de imágenes
