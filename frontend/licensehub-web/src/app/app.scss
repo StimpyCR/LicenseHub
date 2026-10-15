@@ -45,6 +45,10 @@ h1 {
 }
 mat-card {
   padding: 12px;
+  min-width: 0;
+}
+mat-card-content {
+  overflow-wrap: anywhere;
 }
 mat-card-content p {
   line-height: 1.6;
@@ -76,7 +80,7 @@ footer {
 }
 @media (max-width: 700px) {
   .cards {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   main {
     padding-top: 40px;

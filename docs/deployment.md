@@ -2,6 +2,8 @@
 
 Módulos y SDK v1 implementados y verificados localmente. No se autorizó ni realizó despliegue productivo. CI solo comprueba.
 
+El 15 de octubre se ejecutó además un [ensayo local real de los artefactos en Production](phase10-local-acceptance.md) con otra DB sintética, runtime mínimo, PFX/keyring persistentes y template nginx: 11 comprobaciones aprobadas. La suite Windows añadió 15. No acredita DNS/cloud ni modifica la instalación principal. El operador mantiene pospuestos alojamiento y almacenamiento externo.
+
 docker/compose.yaml es Development. docker/compose.production.yaml es una plantilla independiente con nombre/red/volumen distintos, sin PostgreSQL ni migraciones automáticas; requiere DB ya provisionada con runtime mínimo. No combinar ambas.
 
 Variables: LICENSEHUB_API_IMAGE y LICENSEHUB_WEB_IMAGE (digest aprobado repo@sha256:...), LICENSEHUB_PUBLIC_HOST (dominio real), LICENSEHUB_DB_CONNECTION_FILE, LICENSEHUB_DP_CERTIFICATE_FILE y LICENSEHUB_DP_PASSWORD_FILE (PFX DP/contraseña), LICENSEHUB_TLS_CERTIFICATE_FILE y LICENSEHUB_TLS_KEY_FILE. LICENSEHUB_LISTEN_ADDRESS por defecto 127.0.0.1; puerto 8443. Revisar ingress/443 y no publicar DB. La plantilla exige valores, pero revisar realmente digest/infraestructura antes de ejecutar.
@@ -19,4 +21,4 @@ Una configuración rechazada produce 503 genérico en /health/ready; /health/liv
 Development captura en Mailpit (mailpit-development.md). Proveedor real Brevo opt-in con docker/compose.smtp.yaml; pendiente dominio/remitente/clave y no activado. Para producción faltan dominio/TLS, digests/SBOM/escaneo imágenes, custodia DP/backups externa, rol DB efectivo, RPO/RTO/retención/destino/alertas y pruebas PWA en dispositivos. Solicitar autorización explícita sobre configuración concreta antes de desplegar.
 
 
-Las imágenes actuales de PostgreSQL tienen hallazgos críticos/altos en el análisis local; no aprobarlas para producción sin revisar/remediar y ensayar restauración. No se alteraron los servicios existentes para corregir CVE. Ver security-local-review.md.
+PostgreSQL builtin fue remediado y migrado localmente con autorización; su escaneo reciente no reporta hallazgos. El origen se conserva detenido. Los artefactos finales ensayados y hallazgos residuales de API se describen en phase10-local-acceptance.md. No aprobar producción por un contador aislado; repetir escaneo/restauración y aceptación en el destino elegido.

@@ -2,17 +2,19 @@
 
 15 de octubre de 2026. Las fases 1–9 están verificadas; Fase 10 sigue abierta. Este documento reúne los bloqueos actuales para evitar confundir avances históricos con un despliegue aprobado. No se creó una cuenta de alojamiento ni se contrató servicio alguno.
 
+Actualización posterior: el operador confirmó continuar solo en Docker local y Windows; alojamiento/respaldo externo y otros dispositivos quedan pospuestos. Se completó el [paquete local de aceptación](phase10-local-acceptance.md): artefactos actuales, 11 comprobaciones Production sintéticas, 15 de Windows Edge, arreglo responsive, frontend sin hallazgos reportados, copia cifrada restaurada y 23 pruebas de herramientas. No convierte los pendientes externos/manuales en aprobados.
+
 | Elemento | Evidencia actual | Condición para cerrar |
 | --- | --- | --- |
 | Backend, seguridad y correo local | 90/90 pruebas .NET, sin omisiones; PostgreSQL/Mailpit aislados | Repetir verificaciones sobre el artefacto elegido para desplegar |
 | CI de la candidata | 1e155ed: success, run 38768073618 | Mantener CI verde en la revisión final |
 | SDK/API v1 | Contrato congelado y compatible; 94 pruebas SDK reales en Fase 9 | No cambiar el contrato sin evolución explícita |
 | Imagen PostgreSQL y política de texto | Migración local autorizada y verificada; 39 tablas idénticas antes del corte, 90 pruebas posteriores, cero hallazgos reportados; cambios de orden/54 mapeos aceptados | Mantener evidencia reciente y repetir validaciones para el destino productivo |
-| Control de escaneo | Informe ligado a imagen exportada/hash/avisos, 14 pruebas de herramienta y comprobación con dos imágenes reales | Ejecutarlo con informes recientes para cada imagen concreta |
+| Control de escaneo y copias | Informes ligados al artefacto; 14 pruebas de escaneo + 9 de copia/retención; API sin críticas/altas, frontend final y PostgreSQL sin hallazgos reportados | Reevaluar hallazgos medios/bajos API y repetir escaneo antes de salida |
 | Rol runtime | Local usa rol mínimo verificado; readiness productiva del código rechaza privilegios administrativos directos/alcanzables | Provisionar y verificar también en producción; revisar el artefacto API elegido |
 | Alojamiento y dominio/TLS | Usuario aún no eligió proveedor; plantilla endurecida preparada | Elegir destino, permisos, host real y certificados; verificar HTTPS y readiness allí |
-| Backups | AES-GCM, manipulación/clave incorrecta y restauración real verificadas localmente | Elegir custodia independiente, destino externo, frecuencia, retención, alertas y ensayar recuperación en destino |
-| PWA en dispositivos | Recursos, política de caché y responsive revisados | Ejecutar protocolo en dispositivos/navegadores reales y registrar resultados |
+| Backups | AES-GCM, manipulación/clave incorrecta, copia verificada y restauración real; retención propuesta sin borrado | Elegir custodia independiente, destino externo, frecuencia, retención, alertas y ensayar recuperación en destino |
+| PWA en dispositivos | 15 comprobaciones Windows Edge headless: UI/MFA, cuatro viewports, offline/reconexión, logout y persistencia cifrada | Instalación/actualización manual Windows y otros SO reales pendientes; ver pwa-verification.md |
 | Correo externo | Mailpit operativo para pruebas | Brevo/remitente autenticado pospuestos por decisión del usuario; no activar ni contratar dominio ahora |
 
 Las 14 pruebas Python son adicionales a las 90 .NET, no una nueva ejecución de estas últimas ni del SDK. El control de escaneo no es una autorización de despliegue ni sustituye compatibilidad, revisión operativa, restauración o pentest. Ningún inventario privado se publica en CI.

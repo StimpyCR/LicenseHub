@@ -4,6 +4,8 @@ Estado: fases 1–9 implementadas y compatibilidad SDK v1 verificada. Fase 10 en
 
 El 15 de octubre se completó la [migración local de PostgreSQL con respaldo y reversión comprobados](docs/local-migration-2026-10-15.md). Iniciar esta instalación con `tools/start-local.ps1 -SkipBuild`; conserva el origen y utiliza la base migrada. Acceso local: https://localhost:8443/.
 
+El [paquete de aceptación local de Fase 10](docs/phase10-local-acceptance.md) verifica artefactos actuales en un entorno Production sintético, Windows Edge/PWA y copias cifradas. Documenta lo aprobado y los pendientes externos/manuales; no es un despliegue productivo ni cambia automáticamente la instalación principal.
+
 ## Entregables
 
 - `contracts/openapi/licensehub-v1.yaml`: contrato de integración v1.

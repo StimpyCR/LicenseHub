@@ -1,5 +1,7 @@
 # Revisión local de seguridad
 
+**Estado posterior del 15 de octubre:** este documento conserva la revisión histórica del 13. PostgreSQL builtin ya se migró localmente con autorización y cero hallazgos reportados; ver local-migration-2026-10-15.md. Los nuevos artefactos ensayados tienen API 0 críticas/altas, 14 medias/5 bajas sin FixedVersion indicado, y frontend final 0 hallazgos tras parche estable. No son un despliegue de esos artefactos sobre la instalación principal. Ver [aceptación y riesgo residual actuales](phase10-local-acceptance.md). Los siguientes contadores/configuración son históricos, no el estado vigente.
+
 Revisión ejecutada el 13 de octubre de 2026. El operador rechazó exportar inventarios/SBOM a Docker Scout. Se respetó: Scout queda opcional y no se ejecuta. No se subieron imágenes, SBOM ni informes detallados a servicios de análisis.
 
 Trivy se descargó como imagen pública fijada por digest. La base pública de avisos se descargó por separado, sin montar repositorio/imágenes/secretos. Los análisis se ejecutaron con network none, telemetría/version checks deshabilitados, rootfs de solo lectura, UID sin privilegios, cap_drop ALL, sin socket Docker y con archivos de entrada locales. No requieren contactar APIs para identificar dependencias. Ver [documentación oficial del modo offline](https://www.trivy.dev/docs/v0.55/guide/advanced/air-gap/).
