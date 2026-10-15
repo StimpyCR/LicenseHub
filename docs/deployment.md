@@ -12,6 +12,10 @@ Aplicar migraciones revisadas y --provision-jobs con identidad migradora propiet
 
 Verificar HTTPS y /health/ready antes de tráfico; /health/live no consulta DB. Configurar probes en orquestador/monitor: no se añadieron sondas dependientes de curl inexistente. Dashboard Hangfire cerrado. Monitorizar outbox, errores redactados y fallos backup/SMTP.
 
+Readiness exige conexión y migraciones al día. Fuera de Development/Testing también comprueba el rol PostgreSQL: rechaza SUPERUSER, CREATEDB, CREATEROLE, REPLICATION, BYPASSRLS, acceso a archivos/programas del servidor y CREATE en la base o esquemas de aplicación. Revisa roles alcanzables por membresía, incluso sin herencia automática; no basta quitar atributos directos si el runtime puede asumir un rol privilegiado.
+
+Una configuración rechazada produce 503 genérico en /health/ready; /health/live puede continuar respondiendo. El orquestador debe retirar tráfico cuando readiness falla: este control no sustituye las ACL ni bloquea por sí mismo todas las rutas HTTP. No valida exhaustivamente cada permiso de tabla, función SECURITY DEFINER o extensión. Aplicar/revisar runtime-permissions.sql y comprobar el entorno real sigue siendo obligatorio. No compartir la identidad migradora con API/workers.
+
 Development captura en Mailpit (mailpit-development.md). Proveedor real Brevo opt-in con docker/compose.smtp.yaml; pendiente dominio/remitente/clave y no activado. Para producción faltan dominio/TLS, digests/SBOM/escaneo imágenes, custodia DP/backups externa, rol DB efectivo, RPO/RTO/retención/destino/alertas y pruebas PWA en dispositivos. Solicitar autorización explícita sobre configuración concreta antes de desplegar.
 
 

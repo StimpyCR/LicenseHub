@@ -1,5 +1,7 @@
 # Seguridad
 
+Control de rol runtime (15 de octubre): readiness comprueba privilegios PostgreSQL directos y roles alcanzables fuera de Development/Testing. Las conexiones administrativas no se consideran listas para producción. Se verificaron los casos permitidos/rechazados con PostgreSQL real aislado, incluidas membresías sin herencia. Es una barrera operativa complementaria, no una auditoría completa de ACL ni una corrección de las vulnerabilidades de imagen. Ver deployment.md.
+
 Fases 1–9 implementadas: Identity privado sin registro público, bootstrap/recuperación offline, MFA obligatorio, lockout, desafíos únicos, replay TOTP persistente y sesión de 30 minutos contrastada con SecurityStamp. Cookies Secure/HttpOnly/Strict, CSRF y permisos por aplicación. Sin bypass MFA de Development. Ver admin-authentication.md y admin-recovery.md.
 
 Bearer opaco de 256 bits: solo SHA256 persistido, scopes/aplicación/expiración/revocación comprobados en cada solicitud. No JWT ni secretos en Angular/móviles. El backend consumidor determina subjectId; SDK no sustituye autorización. BOLA, FK compuestas, concurrencia e idempotencia verificados con PostgreSQL/SDK reales.

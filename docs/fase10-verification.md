@@ -34,3 +34,13 @@ Actualización: Mailpit/proxy añadidos y configuración SMTP/red de API actuali
 Evaluación posterior PostgreSQL: candidata aislada no root, 0 críticas/altas y 1 media; backup real restaurado y 79 pruebas aprobadas. Se detectó diferencia de collations glibc/musl, por lo que origen no se cambia y fase continúa abierta. Ver postgres-candidate.md.
 
 15 de octubre: candidata Debian con actualizaciones estables construida; comparación automatizada de tres vectores de locale aprobada. Escaneo sin red con avisos actualizados: 1 crítica/61 altas, remediación insuficiente. No nueva suite completa sobre esta variante, no migración y no cambios del PostgreSQL original (encontrado detenido). Se documentó procedimiento de cambio/retorno; no es una ejecución ni autorización de despliegue.
+
+## Readiness y privilegios runtime: 15 de octubre
+
+API configura la comprobación reforzada fuera de Development/Testing. Además de conectividad y migraciones, rechaza atributos administrativos, permisos de archivos/programas del servidor y capacidad de CREATE en base/esquemas, directamente o por roles alcanzables. El healthcheck devuelve el 503 genérico existente; liveness no cambia. No se alteran DTO, credenciales, contrato OpenAPI ni ACL existentes.
+
+Compilación Linux/Docker sin red: 0 warnings y 0 errores; formato aplicado sobre los tres archivos cambiados. Suite final ejecutada: **90/90 aprobadas**, 60 integración + 13 seguridad + 17 unitarias, ninguna omitida. Los once casos nuevos prueban superusuario frente a comportamiento Development, rol acotado aceptado, CREATEDB/CREATEROLE/BYPASSRLS/REPLICATION, CREATE en esquema/base, acceso a archivos del servidor y membresías administrativas/de creación con INHERIT FALSE.
+
+Se usaron PostgreSQL y Mailpit nuevos en redes internas nuevas, sin puertos publicados, datos sintéticos y contraseña privada con ACL restringida. Roles y grants de cada caso se revierten con la transacción; las bases auth_UUID_tests siguen el ciclo de vida de la fixture existente. No se modificaron cuenta del operador, datos, permisos ni contenedores anteriores. Contenedores/redes nuevos y evidencia privada .tooling/runtime-role-tests se conservaron; no hay envíos SMTP reales.
+
+La primera compilación detectó EF1002 en la preparación de roles de prueba. Se corrigió utilizando identificadores entrecomillados generados internamente y comandos transaccionales; la compilación final pasó sin suprimir el analizador. Primera suite 88/88, ampliada y repetida tras agregar casos indirectos: 90/90. No se afirma que el escaneo de imagen haya mejorado: PostgreSQL sigue pendiente de remediación y no se desplegó la API nueva sobre el entorno existente. Falta aplicar y validar un rol runtime real durante el despliegue autorizado.

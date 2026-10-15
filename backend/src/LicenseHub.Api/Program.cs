@@ -50,7 +50,9 @@ var connection = (string.IsNullOrWhiteSpace(connectionFile) ? null : File.ReadAl
     ?? builder.Configuration.GetConnectionString("LicenseHub")
     ?? throw new InvalidOperationException("Configura ConnectionStrings__LicenseHub fuera del código fuente.");
 builder.Services.AddDbContext<LicenseHubDbContext>(options => options.UseNpgsql(connection));
-builder.Services.AddScoped<IStorageAvailability, PostgresAvailability>();
+builder.Services.AddScoped<IStorageAvailability>(provider => new PostgresAvailability(
+    provider.GetRequiredService<LicenseHubDbContext>(),
+    requireRuntimeRole: !builder.Environment.IsDevelopment() && !builder.Environment.IsEnvironment("Testing")));
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<ISuperAdminBootstrap, SuperAdminBootstrap>();
 builder.Services.AddScoped<AdminRecovery>();
