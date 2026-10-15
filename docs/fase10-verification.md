@@ -32,3 +32,5 @@ Actualización: Mailpit/proxy añadidos y configuración SMTP/red de API actuali
 
 
 Evaluación posterior PostgreSQL: candidata aislada no root, 0 críticas/altas y 1 media; backup real restaurado y 79 pruebas aprobadas. Se detectó diferencia de collations glibc/musl, por lo que origen no se cambia y fase continúa abierta. Ver postgres-candidate.md.
+
+15 de octubre: candidata Debian con actualizaciones estables construida; comparación automatizada de tres vectores de locale aprobada. Escaneo sin red con avisos actualizados: 1 crítica/61 altas, remediación insuficiente. No nueva suite completa sobre esta variante, no migración y no cambios del PostgreSQL original (encontrado detenido). Se documentó procedimiento de cambio/retorno; no es una ejecución ni autorización de despliegue.

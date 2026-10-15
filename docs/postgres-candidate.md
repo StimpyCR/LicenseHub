@@ -65,3 +65,11 @@ docker build --target patched -f docker/Dockerfile.postgres-glibc-candidate -t l
 ```
 
 Docker Desktop inició sus procesos el 15 de octubre, pero el motor Linux no respondió y WSL reportó docker-desktop detenido. Por ello estas nuevas pruebas quedaron pendientes; no se restableció Docker, reinició WSL ni modificó ningún contenedor o volumen. La base pública del escaneo anterior corresponde al 13 de octubre y debe actualizarse antes del siguiente dictamen. Procedimiento de cambio/retorno: [postgres-migration-runbook.md](postgres-migration-runbook.md).
+
+### Reintento completado el 15 de octubre
+
+Docker volvió a responder (29.8.2). La variante patched se construyó realmente: apt descargó índices de los repositorios configurados y actualizó dos paquetes, sin instalar ni eliminar otros. El wrapper compare-postgres-locales.ps1 se ejecutó sobre origen fijado y candidata: los tres vectores coinciden. La evidencia queda en .tooling/postgres-locale/latest.json; esto no acredita compatibilidad general.
+
+Se descargó únicamente la base pública de avisos UpdatedAt 2026-10-15T01:13:01Z. Después, Trivy analizó la imagen local con red deshabilitada, sin telemetría ni exportación de inventario. Resultado del filesystem final: **1 crítica, 61 altas, 109 medias, 138 bajas**. No comparar estos conteos directamente con el ensayo del 13 como medida de parches corregidos: cambió también la base de avisos. Los detalles permanecen privados en .tooling/security.
+
+La actualización estable disponible no cumple el objetivo de remediación: no se recomienda desplegar esta candidata. No se repitió la suite completa ni una restauración sobre ella; las 79 pruebas documentadas siguen correspondiendo a la candidata Alpine anterior. El contenedor PostgreSQL original conserva su ID y se encontró detenido: no se arrancó, sustituyó ni modificó su volumen. Las siguientes decisiones deben resolver los hallazgos restantes conservando la semántica o evaluar una alternativa con un cambio de comportamiento explícito y regresión suficiente. Fase 10 abierta.
