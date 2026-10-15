@@ -73,3 +73,24 @@ Docker volvió a responder (29.8.2). La variante patched se construyó realmente
 Se descargó únicamente la base pública de avisos UpdatedAt 2026-10-15T01:13:01Z. Después, Trivy analizó la imagen local con red deshabilitada, sin telemetría ni exportación de inventario. Resultado del filesystem final: **1 crítica, 61 altas, 109 medias, 138 bajas**. No comparar estos conteos directamente con el ensayo del 13 como medida de parches corregidos: cambió también la base de avisos. Los detalles permanecen privados en .tooling/security.
 
 La actualización estable disponible no cumple el objetivo de remediación: no se recomienda desplegar esta candidata. No se repitió la suite completa ni una restauración sobre ella; las 79 pruebas documentadas siguen correspondiendo a la candidata Alpine anterior. El contenedor PostgreSQL original conserva su ID y se encontró detenido: no se arrancó, sustituyó ni modificó su volumen. Las siguientes decisiones deben resolver los hallazgos restantes conservando la semántica o evaluar una alternativa con un cambio de comportamiento explícito y regresión suficiente. Fase 10 abierta.
+
+### Regresión ampliada de locale y delimitación de riesgo
+
+El 15 de octubre se amplió la prueba a seis vectores y se ejecutaron ambas rutas: Debian patched coincide 6/6; Alpine difiere en 3/6 y el wrapper la rechaza correctamente. Los informes ahora se conservan por candidata, además de latest.json, para no perder la comparación anterior. Sintaxis PowerShell y diff comprobados. Estos son ensayos SQL sintéticos, no nuevas pruebas xUnit ni certificación de toda la API.
+
+| Caso | Origen glibc | Alpine | Resultado |
+| --- | --- | --- | --- |
+| Orden de letras/acentos | a,A,á,ä,n,ñ,z,Z | A,Z,a,n,z,á,ä,ñ | distinto |
+| lower/upper Unicode | áäñi / ÁÄÑI | áäñi / ÁÄÑI | igual |
+| Orden de signos y números | a01,a1,a-b,a.b,a_b,ab | a-b,a.b,a01,a1,a_b,ab | distinto |
+| Orden de códigos válidos | a1,a-a,a.a,a_a,aa,advanced_reports | a-a,a.a,a1,a_a,aa,advanced_reports | distinto |
+| Búsqueda lower/strpos de i | coincidencias 1,2,4 | coincidencias 1,2,4 | igual |
+| Búsqueda literal de %_ | coincidencias 1,3 | coincidencias 1,3 | igual |
+
+Alpine emitió un aviso de locales del sistema no disponibles durante initdb. El proceso y SQL terminaron; no se oculta el aviso ni se considera igualdad de nombres garantía de compatibilidad. Los resultados de búsqueda cubren únicamente los vectores escogidos; no toda la normalización Unicode o todas las traducciones SQL de EF.
+
+Revisión estática de backend/src, excluyendo bin/obj: no se encontraron llamadas SQL XMLPARSE, XMLTABLE, XPath, serialización/construcción XML o columnas configuradas con tipo xml. El flujo de búsquedas de clientes usa lower y Contains; las consultas SQL explícitas inspeccionadas usan interpolación parametrizada o constantes para locks/outbox. La ausencia de esas llamadas no demuestra que la biblioteca vulnerable sea inalcanzable ni reemplaza una auditoría SQL completa. El procesamiento XML de Data Protection en .NET es un componente distinto y no se altera.
+
+El seguimiento Debian consultado sigue indicando vulnerable el componente crítico. No se suprimen hallazgos ni se marca como falso positivo porque el proveedor le asigne una severidad distinta. Una imagen libre de hallazgos críticos/altos en el ensayo anterior tampoco acredita todas las propiedades del sistema.
+
+Decisión mantenida: conservar el origen y no mezclar paquetes de ramas inestables ni construir un parche privado de una biblioteca del servidor para forzar un contador a cero. Para avanzar a una sustitución habrá que obtener una base mantenida compatible y corregida, o proponer explícitamente una política de ordenamiento alternativa y sus efectos sobre listados/cursor antes de pedir autorización de migración. El contrato JSON y las consultas actuales no cambiaron.
