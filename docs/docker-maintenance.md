@@ -58,3 +58,30 @@ Comprobaciones ejecutadas tras la recuperación:
 - HTTPS comprobado con validación de certificado, sin omitirla.
 
 No se repitió la suite completa ni se crearon fixtures que acumularan nuevos contenedores. Estas comprobaciones acreditan integridad de datos, arranque y disponibilidad; no sustituyen pruebas de cada flujo funcional. La evidencia detallada y los scripts de esta ventana permanecen privados en `.tooling/docker-compaction-3061b47e414047eb914728b77ae310c9` y `.tooling`, fuera del repositorio versionado.
+
+## Almacenamiento permanente en D:
+
+Posteriormente, el operador autorizó trasladar Docker a `D:\DockerData`, con una nueva pausa temporal de ambos sistemas. El disco operativo actual es **`D:\DockerData\disk\docker_data.vhdx`**. Las nuevas imágenes, contenedores, volúmenes, bases de datos y caché del motor se guardan allí. Los repositorios, los archivos enlazados desde Windows, la instalación de Docker Desktop, sus preferencias y algunos componentes de WSL permanecen en sus ubicaciones originales. No se trasladaron otras herramientas ni proyectos.
+
+Se generaron respaldos frescos de ambas bases y se probaron mediante restauraciones aisladas, con coincidencia de las 39 tablas de LicenseHub y 31 de StockMini. Con todos los servicios detenidos, Docker/WSL apagados y el VHD desconectado, se copió el disco a D: y se verificó completo mediante longitud y SHA-256.
+
+La automatización de la interfaz de Windows falló antes de conectarse. El ajuste se realizó con Docker apagado y copia privada de las preferencias originales. En Docker Desktop **4.94.0**, la opción de interfaz `vm.resources.wslDataFolder` corresponde a **`CustomWslDistroDir` en `settings-store.json`**, configurada en `D:\DockerData`. Los dos nombres ensayados inicialmente no cambiaron la ubicación efectiva; se corrigieron antes de iniciar escritores. No basta con que una ruta aparezca en el archivo de preferencias: se confirmó que Docker publicaba D: como ubicación efectiva, mantenía abierto el VHD de D: y dejaba libre el de C:.
+
+Antes de iniciar las aplicaciones se comprobaron todos los contenedores, volúmenes e imágenes contra el inventario previo, además de IDs, imágenes y montajes de los siete servicios activos. Las huellas de las 70 tablas volvieron a coincidir exactamente. Después se verificaron ambos paneles, sus endpoints de salud por HTTPS y Mailpit con respuestas 200. Se conservaron las credenciales, MFA, claves de protección de datos y configuración de las aplicaciones; no se reconstruyeron imágenes ni se aplicaron migraciones.
+
+Para liberar C: sin descartar la recuperación, el VHD original inactivo se copió y verificó otra vez mediante SHA-256 en `D:\Docker-Maintenance-Backups\e202f180a2d1409da99d75bec1bd1577\docker_data.pre-migration.vhdx`. Solo después se retiró el duplicado inactivo de C:. Ese VHD de reversión conserva el formato nativo sin cifrado adicional y tiene acceso restringido; contiene datos privados y no debe compartirse. Los respaldos lógicos frescos sí están cifrados y sus claves se conservan separadas. También permanece el respaldo cifrado completo anterior a la compactación.
+
+Al finalizar: **C: 46,64 GiB libres; D: 82,87 GiB libres**, incluidos el almacenamiento activo y las copias de recuperación. Son medidas puntuales, no reservas garantizadas. Docker usará D: en siguientes arranques gracias a la preferencia persistida; no se crearon enlaces simbólicos ni se desregistraron distribuciones WSL.
+
+### Reversión del traslado
+
+Las instrucciones privadas están junto al VHD de recuperación en `RECOVERY.txt`. La evidencia y preferencias originales están en `.tooling/docker-migration-e202f180a2d1409da99d75bec1bd1577` y `.secrets/docker-migration/e202f180a2d1409da99d75bec1bd1577`. No versionar estos archivos.
+
+1. Pausar escritores y bases, apagar Docker Desktop y WSL, y verificar que los discos estén desconectados.
+2. Preservar el VHD activo de D: antes de cualquier restauración. No sobrescribirlo.
+3. Con espacio suficiente, copiar el VHD original conservado a la antigua ubicación de C: y comprobar su SHA-256 contra el estado privado `originalDiskRecovery`.
+4. Restaurar las preferencias privadas `settings-store.cold.json` en el archivo de preferencias de Docker. Arrancar Docker y comprobar la ubicación efectiva, recursos y bases antes de habilitar aplicaciones.
+
+La reversión completa vuelve al instante de esa copia: los cambios posteriores requieren otro respaldo o transferencia controlada. Se verificó la copia original byte a byte y se conservaron las preferencias; **no se ejecutó un segundo traslado completo de vuelta a C:**. No usar los scripts privados anteriores que fijaban la antigua ruta de C: para mantenimiento futuro sin revisar sus rutas.
+
+La documentación oficial describe el [almacenamiento WSL y el ajuste de ubicación](https://docs.docker.com/desktop/features/wsl/) y recomienda apagar Docker antes de [copiar su disco para recuperación](https://docs.docker.com/desktop/settings-and-maintenance/backup-and-restore/).
