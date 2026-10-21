@@ -36,4 +36,25 @@ Docker pasó de 32 a **6 contenedores LicenseHub**. La caché total del builder 
 
 Tras la limpieza, C: seguía con unos **0,78 GiB libres** y `docker_data.vhdx` con longitud aproximada de **42,35 GiB**. Recuperar espacio dentro de Docker no prueba que el archivo virtual se haya reducido. No se compactó ni se detuvo el Docker compartido: eso requiere una ventana expresamente autorizada porque afecta también a StockMini. [Microsoft explica el almacenamiento VHD de WSL](https://learn.microsoft.com/en-us/windows/wsl/disk-space); cualquier mantenimiento del disco debe conservar los datos y comprobar recuperación/servicios.
 
-Estado de la compactación en este informe: **pendiente de autorización**, no ejecutada como parte de la limpieza exclusiva de LicenseHub.
+La compactación se ejecutó después, con autorización expresa para pausar también StockMini, según el siguiente registro.
+
+## Compactación autorizada y recuperación
+
+Ventana local iniciada el 20 de octubre de 2026 y finalizada el 21 de octubre en UTC. Se detuvieron los escritores de ambas aplicaciones y se generaron respaldos frescos de PostgreSQL. Se restauraron realmente en bases temporales aisladas: **39 tablas de LicenseHub y 31 de StockMini**, con huellas de los datos coincidentes. Solo se retiraron esas bases temporales creadas durante la comprobación.
+
+Con los siete servicios originales detenidos, se ejecutaron TRIM, apagado de Docker Desktop y WSL, y comprobación de acceso exclusivo al VHD. Antes de compactar se generó un respaldo completo del disco apagado, comprimido y cifrado con AES-256-GCM. Se verificaron autenticación, longitud y SHA-256 del contenido original mediante lectura completa. El archivo cifrado ocupa 25.992.502.287 bytes, unos **24,21 GiB**.
+
+Los respaldos permanecen locales en `D:\Docker-Maintenance-Backups\3061b47e414047eb914728b77ae310c9`, con instrucciones de recuperación y herramienta para restaurar a un archivo nuevo. La clave está separada en el directorio privado ignorado `.secrets/docker-compaction/3061b47e414047eb914728b77ae310c9`; no está en Git ni junto al archivo cifrado. Este respaldo en otra unidad del equipo no sustituye una copia externa. No se borraron datos originales ni se enviaron inventarios o respaldos a servicios externos.
+
+DiskPart se ejecutó elevado, con el VHD adjunto en modo de solo lectura, y confirmó la compactación correcta y su desconexión. La longitud del disco pasó de **45.459.963.904 a 22.216.179.712 bytes**: **42,34 → 20,69 GiB**, una reducción de **21,65 GiB**. Tras reiniciar Docker, Windows mostró **29,42 GiB libres en C:** frente a los 3,95 GiB registrados al inicio de esta ventana; el espacio libre también depende de archivos y procesos ajenos a Docker, por lo que esa diferencia no se atribuye íntegramente a la compactación.
+
+Antes de iniciar los escritores, se compararon nuevamente todas las huellas de las 70 tablas: **sin diferencias**. Se recuperaron exactamente los siete contenedores originales, con los mismos IDs, imágenes y montajes. La base antigua de LicenseHub continúa detenida y preservada para reversión. No se reconstruyeron imágenes ni se modificaron código, credenciales, conexiones o migraciones de StockMini.
+
+Comprobaciones ejecutadas tras la recuperación:
+
+- LicenseHub, `https://localhost:8443/`: panel, `/health/live` y `/health/ready`, todos **200**.
+- StockMini, `https://localhost:8445/`: raíz, `/health/live` y `/health/ready`, todos **200**.
+- Mailpit, `http://127.0.0.1:8025/`: **200**.
+- HTTPS comprobado con validación de certificado, sin omitirla.
+
+No se repitió la suite completa ni se crearon fixtures que acumularan nuevos contenedores. Estas comprobaciones acreditan integridad de datos, arranque y disponibilidad; no sustituyen pruebas de cada flujo funcional. La evidencia detallada y los scripts de esta ventana permanecen privados en `.tooling/docker-compaction-3061b47e414047eb914728b77ae310c9` y `.tooling`, fuera del repositorio versionado.
