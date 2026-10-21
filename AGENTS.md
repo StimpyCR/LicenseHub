@@ -6,3 +6,4 @@
 - No marcar una fase completa si quedan requisitos pendientes. Los commits intermedios deben identificarse como avances.
 - Antes de staging, verificar que secretos, credenciales, certificados privados y archivos de bootstrap estén excluidos. No versionar .secrets ni salidas de compilación.
 - No desplegar automáticamente a producción.
+- Los ensayos Docker no deben acumular contenedores, volúmenes, imágenes o caché innecesarios. Al cerrar un ensayo, retirar solo sus recursos desechables identificados y sin referencias compartidas; conservar evidencia ligera. Nunca usar una poda global ni tocar otros proyectos. Proteger siempre el contenedor/volumen indicado por el marcador de base activa, DataProtection, Mailpit, respaldos y recursos de reversión que aún sean necesarios.
