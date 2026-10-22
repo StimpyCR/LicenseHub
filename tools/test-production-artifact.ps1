@@ -109,7 +109,16 @@ function Check([bool]$Condition, [string]$Name) {
     Write-Output "PASS $Name"
 }
 $checks=0
-$r=Invoke-WebRequest "$baseUrl/health/ready" -TimeoutSec 15
+$readyDeadline = [DateTimeOffset]::UtcNow.AddSeconds(120)
+$startupReady = $false
+do {
+    try {
+        $r = Invoke-WebRequest "$baseUrl/health/ready" -TimeoutSec 10
+        $startupReady = $r.StatusCode -eq 200 -and $r.Content.Trim() -eq 'Healthy'
+    } catch { }
+    if (!$startupReady) { Start-Sleep -Seconds 1 }
+} while (!$startupReady -and [DateTimeOffset]::UtcNow -lt $readyDeadline)
+if (!$startupReady) { throw 'El ensayo sintético no alcanzó readiness HTTPS en 120 segundos.' }
 Check ($r.StatusCode -eq 200 -and $r.Content.Trim() -eq 'Healthy') 'Production + rol mínimo: HTTPS ready'
 Check (($r.Headers['Cache-Control'] -join ',') -match 'no-store') 'Sondas sin caché'
 $page=Invoke-WebRequest $baseUrl -TimeoutSec 15

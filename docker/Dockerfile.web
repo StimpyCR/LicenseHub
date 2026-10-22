@@ -5,7 +5,7 @@ RUN npm ci --no-audit --no-fund
 COPY frontend/licensehub-web/ ./
 RUN npm run build
 
-FROM nginxinc/nginx-unprivileged:stable-alpine
+FROM nginxinc/nginx-unprivileged:stable-alpine AS runtime
 USER root
 RUN apk upgrade --no-cache
 USER 101

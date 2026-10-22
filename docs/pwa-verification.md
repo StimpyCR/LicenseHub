@@ -29,6 +29,8 @@ La prueba reinicia únicamente el contenedor sintético identificado por ese est
 
 ## Pendientes que requieren interacción/dispositivos reales
 
+El 22 de octubre se repitieron las **15 comprobaciones automatizadas** con Edge 155.0.4283.62 de Windows sobre el frontend corregido; todas pasaron. La conexión interactiva inicialmente enumeró aplicaciones, pero el acceso a Edge venció y los reintentos fallaron con timeout/solicitud activa incluso tras restablecer la sesión. La autorización posterior del operador no resolvió el fallo técnico. La instalación/reapertura/actualización instalada continúa sin verificar; ver [informe del incremento](local-update-2026-10-22.md).
+
 | Plataforma/prueba | Estado |
 | --- | --- |
 | Windows Edge: navegador automatizado, responsive, MFA, offline/reconexión | Ejecutado; 15 comprobaciones |

@@ -6,6 +6,8 @@ El 15 de octubre se completó la [migración local de PostgreSQL con respaldo y 
 
 El [paquete de aceptación local de Fase 10](docs/phase10-local-acceptance.md) verifica artefactos actuales en un entorno Production sintético, Windows Edge/PWA y copias cifradas. Documenta lo aprobado y los pendientes externos/manuales; no es un despliegue productivo ni cambia automáticamente la instalación principal.
 
+Actualización del 22 de octubre: [artefactos locales, parche de Vite, verificaciones y límites PWA](docs/local-update-2026-10-22.md). Esta intervención actualiza explícitamente la instalación local, con respaldo restaurado y reversión de imágenes comprobada. La instalación interactiva de PWA y los requisitos externos de Fase 10 siguen pendientes.
+
 ## Entregables
 
 - `contracts/openapi/licensehub-v1.yaml`: contrato de integración v1.

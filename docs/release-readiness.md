@@ -4,6 +4,8 @@
 
 Actualización posterior: el operador confirmó continuar solo en Docker local y Windows; alojamiento/respaldo externo y otros dispositivos quedan pospuestos. Se completó el [paquete local de aceptación](phase10-local-acceptance.md): artefactos actuales, 11 comprobaciones Production sintéticas, 15 de Windows Edge, arreglo responsive, frontend sin hallazgos reportados, copia cifrada restaurada y 23 pruebas de herramientas. No convierte los pendientes externos/manuales en aprobados.
 
+Actualización del **22 de octubre**: [nuevo informe local](local-update-2026-10-22.md), con parche Vite 8.3.5 y lockfiles sin hallazgos, imágenes API/web reevaluadas, suite 90/90, 11 comprobaciones Production y 15 Windows repetidas, credenciales de pruebas renovadas y actualización local con reversión. API: 21 medias/5 bajas sin versión corregida indicada; frontend: cero hallazgos. CI de esta revisión debe comprobarse separadamente; la fila histórica de CI no acredita un commit posterior. PWA instalada sigue pendiente por fallo del control interactivo, aunque el operador autorizó Edge.
+
 | Elemento | Evidencia actual | Condición para cerrar |
 | --- | --- | --- |
 | Backend, seguridad y correo local | 90/90 pruebas .NET, sin omisiones; PostgreSQL/Mailpit aislados | Repetir verificaciones sobre el artefacto elegido para desplegar |

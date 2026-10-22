@@ -65,3 +65,5 @@ Un ciclo nuevo requiere otro StateFile dentro de .secrets/sdk-integration, para 
 - Claves/credenciales ausentes de logs, TRX y evidencia pública inspeccionados.
 
 Compatibilidad local de fase 9; no certifica StockMini productivo, NuGet publicado, SMTP operativo, dispositivos ni seguridad/respaldo de fase 10. Retry 429/503 se prueba en el pipeline SDK; no se detuvo ni saturó el servicio principal para simularlo.
+
+Actualización del 22 de octubre: las credenciales de la fixture original vencieron el 20 de octubre. Se conservaron y se preparó material vigente, limitado a las mismas aplicaciones de prueba, en `.secrets/sdk-integration/local-update-validation.json`. Las 12 consultas del verificador pasaron con ese archivo explícito. No se cambió el contrato ni se repitió la suite SDK de 94 pruebas. El verificador rechaza fixtures vencidas antes de HTTP y permite configurar el timeout del cliente; no cambia los tiempos de revocación ni la autorización del servidor. Ver [actualización local](local-update-2026-10-22.md).

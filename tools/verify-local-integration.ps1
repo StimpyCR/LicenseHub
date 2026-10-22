@@ -1,15 +1,18 @@
-param([string]$FixtureFile)
+param([string]$FixtureFile, [ValidateRange(15, 120)][int]$TimeoutSeconds = 60)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 if (!$FixtureFile) { $FixtureFile = Join-Path $root '.secrets/sdk-integration/state.json' }
 $fixture = Get-Content -LiteralPath $FixtureFile -Raw | ConvertFrom-Json
+if ($fixture.credentialExpiresAt -and ([DateTimeOffset]$fixture.credentialExpiresAt) -le [DateTimeOffset]::UtcNow) {
+    throw 'Las credenciales de esta fixture expiraron. Preparar credenciales de prueba vigentes antes de verificar la actualización; no cambiar la autenticación del servidor.'
+}
 # Se limita al HTTPS local confiable; no permite dirigir credenciales a otro host.
 $baseUrl = 'https://localhost:8443'
 $checks = 0
 function Query([string]$Path, [string]$Subject, [string]$Token, [int]$Expected = 200) {
     $headers = if ($Token) { @{ Authorization = "Bearer $Token" } } else { @{} }
     try {
-        $r = Invoke-WebRequest ($baseUrl + $Path + '?subjectId=' + [Uri]::EscapeDataString($Subject)) -Headers $headers -SkipHttpErrorCheck -TimeoutSec 15
+        $r = Invoke-WebRequest ($baseUrl + $Path + '?subjectId=' + [Uri]::EscapeDataString($Subject)) -Headers $headers -SkipHttpErrorCheck -TimeoutSec $TimeoutSeconds
     } catch { throw 'Falló una consulta HTTPS de pruebas; no se publican cabeceras ni credenciales.' }
     if ([int]$r.StatusCode -ne $Expected) { throw "Estado HTTP inesperado en $Path; esperado $Expected." }
     if ($r.Headers['Cache-Control'] -notmatch 'no-store') { throw 'Falta no-store.' }
