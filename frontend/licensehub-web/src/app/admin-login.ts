@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { Component, DestroyRef, inject, output, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -21,16 +21,45 @@ import { AdminUserManager } from './admin-user-manager';
   ],
   template: `
     @if (session(); as current) {
-      <p>Sesión administrativa: {{ current.email }}</p>
-      <p>MFA verificado.</p>
-      <button mat-stroked-button [disabled]="busy()" (click)="logout()">Cerrar sesión</button>
-      @defer (on immediate) {
-        <app-application-manager [canManage]="current.capabilities.includes('superadmin')" />
-      }
+      <div class="session-bar">
+        <div>
+          <strong>{{ current.email }}</strong
+          ><span class="session-badge">MFA verificado.</span>
+        </div>
+        <button mat-stroked-button [disabled]="busy()" (click)="logout()">Cerrar sesión</button>
+      </div>
       @if (current.capabilities.includes('superadmin')) {
+        <nav class="admin-navigation" aria-label="Administración general">
+          <button
+            mat-button
+            [attr.aria-current]="panel() === 'applications' ? 'page' : null"
+            (click)="changePanel('applications')"
+          >
+            Mis aplicaciones</button
+          ><button
+            mat-button
+            [attr.aria-current]="panel() === 'users' ? 'page' : null"
+            (click)="changePanel('users')"
+          >
+            Administradores
+          </button>
+        </nav>
+      }
+      @if (panel() === 'applications' || !current.capabilities.includes('superadmin')) {
         @defer (on immediate) {
-          <app-admin-user-manager />
+          <app-application-manager
+            #applicationManager
+            [canManage]="current.capabilities.includes('superadmin')"
+          />
         }
+      } @else {
+        <section class="users-panel">
+          <h2>Administradores</h2>
+          <p>Gestiona quién puede entrar al panel y a qué aplicaciones tiene acceso.</p>
+          @defer (on immediate) {
+            <app-admin-user-manager #adminUsers />
+          }
+        </section>
       }
     } @else if (challenge()) {
       <p>Introduce el código de seis dígitos de tu autenticador.</p>
@@ -97,6 +126,45 @@ import { AdminUserManager } from './admin-user-manager';
     }
   `,
   styles: `
+    .session-bar,
+    .session-bar > div {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .session-bar {
+      justify-content: space-between;
+      padding-bottom: 20px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--mat-sys-outline-variant);
+    }
+    .session-bar strong {
+      overflow-wrap: anywhere;
+    }
+    .session-badge {
+      font-size: 12px;
+      color: var(--mat-sys-on-tertiary-container);
+      background: var(--mat-sys-tertiary-container);
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+    .admin-navigation {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+    .admin-navigation button[aria-current] {
+      background: var(--mat-sys-primary-container);
+      color: var(--mat-sys-on-primary-container);
+    }
+    .users-panel {
+      padding: 24px;
+      border: 1px solid var(--mat-sys-outline-variant);
+      border-radius: 20px;
+    }
+
     form {
       display: grid;
       gap: 12px;
@@ -116,6 +184,10 @@ import { AdminUserManager } from './admin-user-manager';
 export class AdminLogin {
   private readonly auth = inject(AdminAuthService);
   private readonly destroyRef = inject(DestroyRef);
+  readonly sessionChanged = output<AdminSession | null>();
+  protected readonly panel = signal<'applications' | 'users'>('applications');
+  private readonly manager = viewChild<ApplicationManager>('applicationManager');
+  private readonly users = viewChild<AdminUserManager>('adminUsers');
   protected readonly session = signal<AdminSession | null>(null);
   protected readonly busy = signal(true);
   protected readonly challenge = signal(false);
@@ -137,7 +209,34 @@ export class AdminLogin {
     }),
   });
 
+  protected changePanel(panel: 'applications' | 'users') {
+    if (this.panel() === panel) return;
+    if (this.manager() && !this.manager()!.canLeave()) return;
+    if (this.users()?.isWorking()) {
+      this.error.set('Espera a que termine la operación.');
+      return;
+    }
+    if (
+      this.users()?.hasPendingWork() &&
+      !window.confirm('Hay cambios sin guardar. ¿Quieres cambiar de sección?')
+    )
+      return;
+    this.panel.set(panel);
+  }
+  private setSession(session: AdminSession | null) {
+    this.session.set(session);
+    this.sessionChanged.emit(session);
+    if (!session) this.panel.set('applications');
+  }
   constructor() {
+    const beforeUnload = (event: BeforeUnloadEvent) => {
+      if (this.manager()?.hasPendingWork() || this.users()?.hasPendingWork()) {
+        event.preventDefault();
+        event.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', beforeUnload);
+    this.destroyRef.onDestroy(() => window.removeEventListener('beforeunload', beforeUnload));
     this.auth
       .session()
       .pipe(
@@ -145,7 +244,7 @@ export class AdminLogin {
         finalize(() => this.busy.set(false)),
       )
       .subscribe({
-        next: (session) => this.session.set(session),
+        next: (session) => this.setSession(session),
         error: () => this.error.set('No se pudo comprobar la sesión. Intenta más tarde.'),
       });
   }
@@ -183,7 +282,7 @@ export class AdminLogin {
       )
       .subscribe({
         next: (session) => {
-          this.session.set(session);
+          this.setSession(session);
           this.challenge.set(false);
         },
         error: () =>
@@ -205,14 +304,14 @@ export class AdminLogin {
         finalize(() => this.busy.set(false)),
       )
       .subscribe({
-        next: () => this.session.set(null),
+        next: () => this.setSession(null),
         error: () => {
           this.auth
             .session()
             .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe({
               next: (session) => {
-                this.session.set(session);
+                this.setSession(session);
                 this.error.set(
                   session
                     ? 'No se pudo cerrar la sesión. Intenta de nuevo.'

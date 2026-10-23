@@ -1,0 +1,213 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+h2 {
+  font-size: clamp(22px, 3vw, 30px);
+  margin: 0 0 8px;
+  letter-spacing: -0.6px;
+  overflow-wrap: anywhere;
+}
+h3 {
+  margin: 16px 0 4px;
+  overflow-wrap: anywhere;
+}
+p {
+  line-height: 1.6;
+}
+.muted {
+  color: var(--mat-sys-on-surface-variant);
+}
+.section-heading,
+.workspace-heading,
+.application-card-top,
+.list-tools,
+.actions,
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.section-heading {
+  margin-bottom: 24px;
+}
+.section-heading p {
+  margin: 0;
+}
+.workspace-heading {
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+.workspace-heading button {
+  margin-bottom: 12px;
+}
+.workspace-heading p {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin: 8px 0 0;
+}
+.section-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px;
+  background: var(--mat-sys-surface-container);
+  border-radius: 16px;
+  margin-bottom: 24px;
+}
+.section-nav button[aria-current] {
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+}
+.panel,
+.application-card,
+.empty-state {
+  border: 1px solid var(--mat-sys-outline-variant);
+  background: var(--mat-sys-surface);
+  border-radius: 20px;
+  padding: 28px;
+  min-width: 0;
+}
+.application-grid,
+.task-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: 20px;
+}
+.application-card {
+  display: flex;
+  flex-direction: column;
+}
+.application-card .actions {
+  margin-top: auto;
+  padding-top: 20px;
+  justify-content: flex-start;
+}
+.application-card p {
+  overflow-wrap: anywhere;
+  margin: 4px 0 16px;
+}
+.app-monogram {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+  font-size: 22px;
+  font-weight: 700;
+}
+.badge {
+  padding: 4px 12px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
+}
+.badge.inactive {
+  background: var(--mat-sys-surface-container-highest);
+  color: var(--mat-sys-on-surface-variant);
+}
+.list-tools {
+  justify-content: flex-start;
+  margin: 0 0 24px;
+}
+.list-tools mat-form-field {
+  flex: 1;
+  max-width: 440px;
+  min-width: min(100%, 240px);
+}
+.task-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: left;
+  border: 1px solid var(--mat-sys-outline-variant);
+  background: var(--mat-sys-surface-container-low);
+  color: var(--mat-sys-on-surface);
+  border-radius: 16px;
+  padding: 24px;
+  font: inherit;
+  cursor: pointer;
+}
+.task-card:hover {
+  border-color: var(--mat-sys-primary);
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+}
+.task-card strong {
+  font-size: 18px;
+}
+.task-card span:last-child {
+  line-height: 1.5;
+}
+.task-number {
+  font-weight: 700;
+  color: var(--mat-sys-primary);
+}
+.guide,
+.notice {
+  padding: 16px 20px;
+  border-radius: 12px;
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+  line-height: 1.6;
+}
+.guide {
+  margin-top: 24px;
+}
+.technical-details {
+  margin-top: 24px;
+}
+summary {
+  cursor: pointer;
+  padding: 8px 0;
+}
+.identifier {
+  overflow-wrap: anywhere;
+  font-family: monospace;
+}
+form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 24px;
+}
+mat-form-field {
+  width: 100%;
+  min-width: 0;
+}
+.wide {
+  grid-column: 1 / -1;
+}
+.actions {
+  justify-content: flex-start;
+}
+.pagination {
+  margin-top: 24px;
+}
+button {
+  white-space: normal;
+}
+@media (max-width: 700px) {
+  form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .panel,
+  .application-card {
+    padding: 20px;
+  }
+  .section-nav {
+    gap: 4px;
+  }
+  .section-nav button {
+    flex: 1 1 140px;
+  }
+  .workspace-heading {
+    gap: 8px;
+  }
+}

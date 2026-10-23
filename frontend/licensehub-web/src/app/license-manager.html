@@ -1,0 +1,226 @@
+<nav class="tabs" aria-label="Clientes y licencias">
+  <button
+    mat-button
+    [attr.aria-current]="tab() === 'licenses' ? 'page' : null"
+    (click)="openTab('licenses')"
+  >
+    Licencias
+  </button>
+  <button
+    mat-button
+    [attr.aria-current]="tab() === 'customers' ? 'page' : null"
+    (click)="openTab('customers')"
+  >
+    Clientes
+  </button>
+  <button mat-flat-button (click)="openTab('issue')">Crear licencia</button>
+</nav>
+@if (tab() === 'customers') {
+  <h4>Clientes</h4>
+  <p>
+    El identificador de negocio lo determina el backend de la aplicación. No uses un ID elegido por
+    el navegador.
+  </p>
+  <mat-form-field
+    ><mat-label>Buscar cliente</mat-label
+    ><input matInput [formControl]="customerSearch" maxlength="120"
+  /></mat-form-field>
+  <button mat-button [disabled]="busy()" (click)="loadCustomers()">
+    Buscar / actualizar clientes
+  </button>
+  @for (customer of customers(); track customer.id) {
+    <p>
+      {{ customer.subjectId }} · {{ customer.displayName || 'Sin nombre' }} ·
+      {{ customer.email || 'Sin correo' }}
+    </p>
+    <button mat-button [disabled]="busy()" (click)="edit(customer)">Editar contacto</button>
+    <button mat-button [disabled]="busy()" (click)="assignCustomer(customer)">
+      Preasignar licencia
+    </button>
+  } @empty {
+    <p>No hay clientes cargados.</p>
+  }
+  @if (customerCursor()) {
+    <button mat-button [disabled]="busy()" (click)="loadCustomers(customerCursor())">
+      Clientes siguientes
+    </button>
+  }
+  <form [formGroup]="customerForm" (ngSubmit)="saveCustomer()">
+    <mat-form-field
+      ><mat-label>Identificador de negocio</mat-label
+      ><input matInput formControlName="subjectId" maxlength="128"
+    /></mat-form-field>
+    <mat-form-field
+      ><mat-label>Nombre del cliente</mat-label
+      ><input matInput formControlName="displayName" maxlength="200"
+    /></mat-form-field>
+    <mat-form-field
+      ><mat-label>Correo del cliente</mat-label
+      ><input matInput formControlName="email" type="email" maxlength="254"
+    /></mat-form-field>
+    <button mat-flat-button [disabled]="busy() || customerForm.invalid" type="submit">
+      {{ selectedCustomer() ? 'Guardar contacto' : 'Registrar cliente' }}
+    </button>
+    <button mat-button [disabled]="busy()" type="button" (click)="newCustomer()">
+      Nuevo cliente
+    </button>
+  </form>
+}
+@if (tab() === 'issue') {
+  <h3>Crear licencias</h3>
+  <p>Por defecto duran 30 días desde su activación. Puedes cambiar la vigencia a continuación.</p>
+  <p>
+    Los códigos completos se muestran una sola vez. Un reintento confirma la emisión sin
+    recuperarlos. Guarda los códigos antes de ocultarlos.
+  </p>
+  <form [formGroup]="issueForm" (ngSubmit)="issue()">
+    <mat-form-field
+      ><mat-label>Cantidad (1–100)</mat-label
+      ><input matInput type="number" formControlName="quantity" min="1" max="100"
+    /></mat-form-field>
+    <mat-form-field
+      ><mat-label>Inicio de vigencia</mat-label
+      ><select matNativeControl formControlName="startMode">
+        <option value="OnActivation">Al activar</option>
+        <option value="OnIssue">Al emitir</option>
+      </select></mat-form-field
+    >
+    <mat-form-field
+      ><mat-label>Tipo de vigencia</mat-label
+      ><select matNativeControl formControlName="kind">
+        <option value="Duration">Duración</option>
+        <option value="Until">Fecha específica</option>
+        <option value="Lifetime">Vitalicia</option>
+      </select></mat-form-field
+    >
+    @if (issueForm.controls.kind.value === 'Duration') {
+      <mat-form-field
+        ><mat-label>Duración</mat-label
+        ><input matInput formControlName="value" type="number" min="1" max="1000000"
+      /></mat-form-field>
+      <mat-form-field
+        ><mat-label>Unidad</mat-label
+        ><select matNativeControl formControlName="unit">
+          <option value="Minute">Minutos</option>
+          <option value="Hour">Horas</option>
+          <option value="Day">Días</option>
+          <option value="Month">Meses calendario</option>
+          <option value="Year">Años calendario</option>
+        </select></mat-form-field
+      >
+    }
+    @if (issueForm.controls.kind.value === 'Until') {
+      <mat-form-field
+        ><mat-label>Fecha de vencimiento local</mat-label
+        ><input matInput formControlName="until" type="datetime-local" /><mat-hint
+          >Se envía en UTC. Requiere inicio al emitir.</mat-hint
+        ></mat-form-field
+      >
+    }
+    <mat-form-field
+      ><mat-label>Cliente (opcional)</mat-label
+      ><select matNativeControl formControlName="customerId">
+        <option value="">Sin preasignar: se vinculará al activar</option>
+        @for (customer of customers(); track customer.id) {
+          <option [value]="customer.id">{{ customer.displayName || customer.subjectId }}</option>
+        }</select
+      ><mat-hint
+        >Para un cliente específico, emite una sola licencia. Puedes buscarlo en la pestaña
+        Clientes.</mat-hint
+      ></mat-form-field
+    >
+    <fieldset>
+      <legend>Funciones incluidas</legend>
+      <p>Selecciona las funciones contratadas de esta aplicación.</p>
+      @for (feature of catalog(); track feature.code) {
+        <mat-checkbox
+          [checked]="featureSelected(feature.code)"
+          (change)="toggleFeature(feature.code, $event.checked)"
+          >{{ feature.name }} <small>({{ feature.code }})</small></mat-checkbox
+        >
+      } @empty {
+        <p>No hay funciones cargadas. Puedes crearlas en Conexión y funciones.</p>
+      }
+      @if (catalogMessage()) {
+        <p>{{ catalogMessage() }}</p>
+      }
+      <details>
+        <summary>Opciones avanzadas: códigos de funciones</summary>
+        <mat-form-field
+          ><mat-label>Códigos separados por coma</mat-label
+          ><input matInput formControlName="features" maxlength="6500" /><mat-hint
+            >Solo códigos activos del catálogo de esta aplicación.</mat-hint
+          ></mat-form-field
+        >
+      </details>
+    </fieldset>
+    <button mat-flat-button [disabled]="busy() || issueForm.invalid" type="submit">
+      Emitir licencias
+    </button>
+    <button mat-button [disabled]="busy()" type="button" (click)="newIssue()">
+      Preparar otra emisión
+    </button>
+  </form>
+  @if (issued(); as batch) {
+    <p>
+      {{
+        batch.codesRecoverable
+          ? 'Emisión completada. Códigos disponibles temporalmente.'
+          : 'Emisión ya registrada; los códigos no son recuperables.'
+      }}
+    </p>
+    @for (item of batch.items; track item.license.id) {
+      <p class="identifier">Licencia {{ item.license.id }} · {{ item.license.state }}</p>
+      @if (item.licenseKey) {
+        <mat-form-field
+          ><mat-label>Código de licencia {{ $index + 1 }}</mat-label
+          ><input matInput readonly autocomplete="off" [value]="item.licenseKey"
+        /></mat-form-field>
+      }
+    }
+    <button mat-stroked-button (click)="hideCodes()">Ya guardé los códigos: ocultar</button>
+  }
+}
+@if (tab() === 'licenses') {
+  <h4>Licencias de la aplicación</h4>
+  <mat-form-field
+    ><mat-label>Filtrar estado</mat-label
+    ><select matNativeControl [formControl]="state">
+      <option value="">Todos</option>
+      @for (value of states; track value) {
+        <option [value]="value">{{ stateLabel(value) }}</option>
+      }
+    </select></mat-form-field
+  >
+  <button mat-button [disabled]="busy()" (click)="loadLicenses()">Consultar licencias</button>
+  @for (license of licenses(); track license.id) {
+    <p class="identifier">{{ license.id }} · {{ stateLabel(license.state) }}</p>
+    <p>
+      {{
+        license.isLifetime
+          ? 'Vitalicia'
+          : 'Vencimiento: ' + ((license.expiresAt | date: 'medium') || 'Comienza al activar')
+      }}
+    </p>
+    <p>Funcionalidades: {{ license.features.join(', ') || 'Ninguna' }}</p>
+    <button mat-button [disabled]="busy()" (click)="manage(license)">
+      Administrar esta licencia
+    </button>
+  } @empty {
+    <p>No hay licencias cargadas.</p>
+  }
+  @if (licenseCursor()) {
+    <button mat-button [disabled]="busy()" (click)="loadLicenses(licenseCursor())">
+      Licencias siguientes
+    </button>
+  }
+  @for (item of managed() ? [managed()!] : []; track item.id) {
+    <button mat-button (click)="manage(null)">Cerrar administración de licencia</button>
+    @defer (on immediate) {
+      <app-license-lifecycle #lifecycle [license]="item" />
+    }
+  }
+}
+@if (message()) {
+  <p role="status">{{ message() }}</p>
+}

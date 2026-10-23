@@ -140,6 +140,19 @@ interface Application {
   `,
 })
 export class AdminUserManager {
+  isWorking(): boolean {
+    return this.busy();
+  }
+  hasPendingWork(): boolean {
+    return (
+      this.busy() ||
+      this.createForm.dirty ||
+      this.grantForm.dirty ||
+      this.reason.dirty ||
+      this.disabled.dirty
+    );
+  }
+
   private readonly http = inject(HttpClient);
   private readonly destroyRef = inject(DestroyRef);
   private readonly createFormDirective = viewChild<FormGroupDirective>('createFormDirective');

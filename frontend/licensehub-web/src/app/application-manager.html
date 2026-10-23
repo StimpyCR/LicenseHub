@@ -1,0 +1,261 @@
+@if (workspace(); as app) {
+  <header class="workspace-heading">
+    <div>
+      <button mat-button (click)="backToApplications()">← Mis aplicaciones</button>
+      <h2>{{ app.name }}</h2>
+      <p>
+        <span class="badge" [class.inactive]="!app.isActive">{{
+          app.isActive ? 'Activa' : 'Desactivada'
+        }}</span>
+        <span class="muted">{{ app.slug }}</span>
+      </p>
+    </div>
+    @if (canManage()) {
+      <button mat-stroked-button (click)="edit(app)">Configurar aplicación</button>
+    }
+  </header>
+  @if (!app.isActive) {
+    <p class="notice">
+      Esta aplicación está desactivada. Sus integraciones no pueden autenticarse. Puedes reactivarla
+      en Configurar aplicación.
+    </p>
+  }
+  <nav class="section-nav" aria-label="Secciones de la aplicación">
+    @for (item of sections; track item.id) {
+      <button
+        mat-button
+        [attr.aria-current]="section() === item.id ? 'page' : null"
+        (click)="navigate(item.id)"
+      >
+        {{ item.label }}
+      </button>
+    }
+  </nav>
+}
+
+@if (message()) {
+  <p class="notice" role="status">{{ message() }}</p>
+}
+
+@if (showEditor() && canManage()) {
+  <section class="panel editor" aria-labelledby="application-editor-title">
+    <div class="section-heading">
+      <div>
+        <h2 id="application-editor-title">
+          {{ selected() ? 'Configurar aplicación' : 'Registrar una aplicación' }}
+        </h2>
+        <p class="muted">
+          {{
+            selected()
+              ? 'Actualiza el nombre o cambia su disponibilidad.'
+              : 'Empieza con el nombre. Te proponemos un identificador automáticamente.'
+          }}
+        </p>
+      </div>
+    </div>
+    <form #applicationFormDirective="ngForm" [formGroup]="form" (ngSubmit)="save()">
+      <mat-form-field appearance="outline"
+        ><mat-label>Nombre de la aplicación</mat-label
+        ><input
+          matInput
+          formControlName="name"
+          maxlength="120"
+          placeholder="Por ejemplo, StockMini"
+        />
+        <mat-error>Escribe un nombre de hasta 120 caracteres.</mat-error>
+      </mat-form-field>
+      <mat-form-field appearance="outline"
+        ><mat-label>Identificador corto (slug)</mat-label
+        ><input matInput formControlName="slug" maxlength="64" placeholder="stockmini" />
+        <mat-hint>{{
+          selected()
+            ? 'Se conserva para mantener las integraciones existentes.'
+            : 'Se genera con el nombre. Puedes ajustarlo: debe ser único y no cambia después.'
+        }}</mat-hint>
+        <mat-error
+          >Comienza con una letra y usa minúsculas, números o guiones; máximo 64
+          caracteres.</mat-error
+        >
+      </mat-form-field>
+      <div class="wide">
+        <mat-checkbox formControlName="isActive">Aplicación activa</mat-checkbox>
+        <p class="muted">
+          Al desactivarla se conserva el historial, pero se bloquea el acceso de sus integraciones.
+          No se elimina la aplicación.
+        </p>
+      </div>
+      <div class="actions wide">
+        <button mat-flat-button type="submit" [disabled]="busy() || form.invalid">
+          {{ busy() ? 'Guardando…' : selected() ? 'Guardar cambios' : 'Crear aplicación' }}</button
+        ><button mat-button type="button" [disabled]="busy()" (click)="cancelEditor()">
+          Cancelar
+        </button>
+      </div>
+    </form>
+  </section>
+} @else if (workspace(); as app) {
+  <section class="panel workspace-content" aria-label="Contenido de la aplicación">
+    @switch (section()) {
+      @case ('overview') {
+        <div class="section-heading">
+          <div>
+            <h2>¿Qué quieres hacer en {{ app.name }}?</h2>
+            <p class="muted">Elige una tarea. Siempre trabajarás dentro de esta aplicación.</p>
+          </div>
+        </div>
+        <div class="task-grid">
+          <button class="task-card" (click)="openLicenses('issue')">
+            <span class="task-number">01</span><strong>Crear una licencia</strong
+            ><span>Elige su duración y las funciones que incluirá.</span>
+          </button>
+          <button class="task-card" (click)="openLicenses('customers')">
+            <span class="task-number">02</span><strong>Gestionar clientes</strong
+            ><span>Registra negocios y actualiza sus datos de contacto.</span>
+          </button>
+          <button class="task-card" (click)="openLicenses('licenses')">
+            <span class="task-number">03</span><strong>Consultar o renovar</strong
+            ><span>Busca licencias, revisa su estado y administra su vigencia.</span>
+          </button>
+        </div>
+        <p class="guide">
+          ¿Acabas de registrar esta aplicación? Primero define sus funciones en
+          <strong>Conexión y funciones</strong>; después registra un cliente y crea su licencia.
+        </p>
+        <details class="technical-details">
+          <summary>Identificador de la aplicación para el SDK</summary>
+          <p class="identifier">{{ app.id }}</p>
+          <p class="muted">
+            Este UUID es público. La credencial privada se genera en Conexión y funciones.
+          </p>
+        </details>
+      }
+      @case ('licenses') {
+        @defer (on immediate) {
+          <app-license-manager
+            #licenseManager
+            [applicationId]="app.id"
+            [initialTab]="licenseTab()"
+          />
+        }
+      }
+      @case ('payments') {
+        <h2>Pagos</h2>
+        <p class="muted">Registra pagos manuales y revisa su confirmación antes de renovar.</p>
+        @defer (on immediate) {
+          <app-payment-manager #paymentManager [applicationId]="app.id" />
+        }
+      }
+      @case ('notifications') {
+        <h2>Correos y avisos</h2>
+        <p class="muted">
+          Configura los avisos de esta aplicación y consulta el historial de envíos.
+        </p>
+        @defer (on immediate) {
+          <app-notification-manager #notificationManager [applicationId]="app.id" />
+        }
+      }
+      @case ('integration') {
+        @defer (on immediate) {
+          <app-application-details #integrationDetails [applicationId]="app.id" />
+        }
+      }
+      @case ('reports') {
+        <h2>Informes</h2>
+        <p class="muted">Consulta las estadísticas y la auditoría de esta aplicación.</p>
+        @defer (on immediate) {
+          <app-admin-reports [applicationId]="app.id" />
+        }
+      }
+    }
+  </section>
+} @else {
+  <section aria-labelledby="applications-title">
+    <div class="section-heading">
+      <div>
+        <h2 id="applications-title">Mis aplicaciones</h2>
+        <p class="muted">Abre una aplicación para gestionar sus clientes, licencias y pagos.</p>
+      </div>
+      @if (canManage()) {
+        <button mat-flat-button [disabled]="busy()" (click)="startCreate()">
+          + Registrar aplicación
+        </button>
+      }
+    </div>
+    <div class="list-tools">
+      <mat-form-field appearance="outline"
+        ><mat-label>Filtrar esta página</mat-label
+        ><input
+          matInput
+          [value]="query()"
+          (input)="query.set($any($event.target).value)"
+          placeholder="Nombre o identificador"
+        /><mat-hint
+          >El filtro se aplica a las aplicaciones de la página actual.</mat-hint
+        ></mat-form-field
+      ><button mat-stroked-button [disabled]="busy() || loading()" (click)="load()">
+        Actualizar lista
+      </button>
+    </div>
+    @if (loading()) {
+      <p role="status">Cargando aplicaciones…</p>
+    }
+    <div class="application-grid" [attr.aria-busy]="loading()">
+      @for (app of visibleApplications(); track app.id) {
+        <article class="application-card">
+          <div class="application-card-top">
+            <div class="app-monogram" aria-hidden="true">
+              {{ app.name.slice(0, 1).toUpperCase() }}
+            </div>
+            <span class="badge" [class.inactive]="!app.isActive">{{
+              app.isActive ? 'Activa' : 'Desactivada'
+            }}</span>
+          </div>
+          <h3>{{ app.name }}</h3>
+          <p class="muted">{{ app.slug }}</p>
+          <div class="actions">
+            <button mat-flat-button [disabled]="busy() || loading()" (click)="open(app)">
+              Abrir aplicación →
+            </button>
+            @if (canManage()) {
+              <button mat-button [disabled]="busy() || loading()" (click)="edit(app)">
+                Editar
+              </button>
+            }
+          </div>
+        </article>
+      } @empty {
+        @if (!loading()) {
+          <div class="empty-state">
+            <h3>
+              {{
+                query()
+                  ? 'No hay coincidencias en esta página'
+                  : 'Todavía no hay aplicaciones en esta página'
+              }}
+            </h3>
+            <p>
+              {{
+                query()
+                  ? 'Prueba con otro nombre o borra el filtro.'
+                  : 'Registra una aplicación para comenzar. Si tienes permisos delegados, pide que te asignen acceso.'
+              }}
+            </p>
+            @if (query()) {
+              <button mat-button (click)="query.set('')">Borrar filtro</button>
+            }
+          </div>
+        }
+      }
+    </div>
+    <div class="pagination">
+      <button mat-button [disabled]="busy() || loading() || !onLaterPage()" (click)="load()">
+        Volver al inicio
+      </button>
+      @if (cursor()) {
+        <button mat-stroked-button [disabled]="busy() || loading()" (click)="load(cursor())">
+          Página siguiente →
+        </button>
+      }
+    </div>
+  </section>
+}

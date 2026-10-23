@@ -3,7 +3,7 @@ WORKDIR /source
 COPY frontend/licensehub-web/package*.json ./
 RUN npm ci --no-audit --no-fund
 COPY frontend/licensehub-web/ ./
-RUN npm run build
+RUN NG_BUILD_MAX_WORKERS=2 npm run build
 
 FROM nginxinc/nginx-unprivileged:stable-alpine AS runtime
 USER root

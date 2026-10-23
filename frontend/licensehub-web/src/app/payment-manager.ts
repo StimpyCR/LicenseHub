@@ -174,6 +174,13 @@ interface Payment {
   `,
 })
 export class PaymentManager {
+  isWorking(): boolean {
+    return this.busy();
+  }
+  hasPendingWork(): boolean {
+    return this.busy() || this.form.dirty || this.reason.dirty;
+  }
+
   protected readonly licenseOptions = signal<
     { id: string; customerId: string | null; state: string }[]
   >([]);

@@ -4,6 +4,7 @@
 .secrets
 **/.keys
 **/node_modules
+**/.angular
 **/dist
 **/bin
 **/obj

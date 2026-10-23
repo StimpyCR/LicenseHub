@@ -152,6 +152,13 @@ interface Log {
   `,
 })
 export class NotificationManager {
+  isWorking(): boolean {
+    return this.busy();
+  }
+  hasPendingWork(): boolean {
+    return this.busy() || this.settings.dirty || this.template.dirty;
+  }
+
   readonly applicationId = input.required<string>();
   private readonly http = inject(HttpClient);
   private readonly destroyRef = inject(DestroyRef);

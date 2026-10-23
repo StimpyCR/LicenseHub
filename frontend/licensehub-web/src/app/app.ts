@@ -3,7 +3,6 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { SwUpdate } from '@angular/service-worker';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { Subject, merge, of, startWith, switchMap, timer } from 'rxjs';
@@ -15,7 +14,6 @@ import { AdminLogin } from './admin-login';
     AdminLogin,
     ReactiveFormsModule,
     MatButtonModule,
-    MatCardModule,
     MatSlideToggleModule,
     MatToolbarModule,
   ],
@@ -24,6 +22,7 @@ import { AdminLogin } from './admin-login';
   templateUrl: './app.html',
 })
 export class App {
+  protected readonly signedIn = signal(false);
   private readonly updates = inject(SwUpdate);
   protected readonly updateReady = signal(false);
   private readonly availabilityService = inject(AvailabilityService);

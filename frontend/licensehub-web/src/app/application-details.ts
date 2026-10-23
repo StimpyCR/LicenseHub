@@ -35,97 +35,131 @@ interface Page<T> {
   selector: 'app-application-details',
   imports: [ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatInputModule],
   template: `
-    <h3>Credenciales de integración</h3>
-    <p>
-      Instala los secretos únicamente en el backend consumidor. Para rotar: emite otra credencial,
-      compruébala y revoca la anterior.
-    </p>
-    <button mat-button (click)="loadCredentials()" [disabled]="busy()">
-      Actualizar credenciales
-    </button>
-    @for (credential of credentials(); track credential.id) {
+    <nav class="tabs" aria-label="Conexión y funciones">
+      <button
+        mat-button
+        [attr.aria-current]="panel() === 'features' ? 'page' : null"
+        (click)="changePanel('features')"
+      >
+        Funciones Premium</button
+      ><button
+        mat-button
+        [attr.aria-current]="panel() === 'credentials' ? 'page' : null"
+        (click)="changePanel('credentials')"
+      >
+        Conectar con el SDK
+      </button>
+    </nav>
+    @if (panel() === 'credentials') {
+      <h3>Conectar tu aplicación</h3>
       <p>
-        {{ credential.id }} · {{ credential.scopes.join(', ') }} · Vence {{ credential.expiresAt }}
+        Instala los secretos únicamente en el backend consumidor. Para rotar: emite otra credencial,
+        compruébala y revoca la anterior.
       </p>
-      @if (credential.revokedAt) {
-        <p>Revocada {{ credential.revokedAt }}</p>
-      } @else {
-        <button
-          mat-stroked-button
-          (click)="revoke(credential)"
-          [disabled]="busy() || reason.invalid"
-        >
-          Revocar
+      <button mat-button (click)="loadCredentials()" [disabled]="busy()">
+        Actualizar credenciales
+      </button>
+      @for (credential of credentials(); track credential.id) {
+        <p>
+          {{ credential.id }} · {{ credential.scopes.join(', ') }} · Vence
+          {{ credential.expiresAt }}
+        </p>
+        @if (credential.revokedAt) {
+          <p>Revocada {{ credential.revokedAt }}</p>
+        } @else {
+          <button
+            mat-stroked-button
+            (click)="revoke(credential)"
+            [disabled]="busy() || reason.invalid"
+          >
+            Revocar
+          </button>
+        }
+      }
+      @if (credentialCursor()) {
+        <button mat-button [disabled]="busy()" (click)="loadCredentials(credentialCursor())">
+          Más credenciales
         </button>
       }
-    }
-    @if (credentialCursor()) {
-      <button mat-button [disabled]="busy()" (click)="loadCredentials(credentialCursor())">
-        Más credenciales
-      </button>
-    }
-    <mat-form-field
-      ><mat-label>Motivo de revocación</mat-label
-      ><input matInput [formControl]="reason" maxlength="1000"
-    /></mat-form-field>
-    <form [formGroup]="credentialForm" (ngSubmit)="issue()">
       <mat-form-field
-        ><mat-label>Duración de credencial (horas)</mat-label
-        ><input matInput type="number" formControlName="hours" min="1" max="8760"
+        ><mat-label>Motivo de revocación</mat-label
+        ><input matInput [formControl]="reason" maxlength="1000"
       /></mat-form-field>
-      <label><input type="checkbox" formControlName="read" /> Consultar licencias</label>
-      <label><input type="checkbox" formControlName="activate" /> Activar licencias</label>
-      <label><input type="checkbox" formControlName="warnings" /> Consultar avisos</label>
-      <button mat-flat-button [disabled]="busy() || credentialForm.invalid" type="submit">
-        Emitir credencial
-      </button>
-    </form>
-    @if (secret()) {
+      <form [formGroup]="credentialForm" (ngSubmit)="issue()">
+        <mat-form-field
+          ><mat-label>Duración de credencial (horas)</mat-label
+          ><input matInput type="number" formControlName="hours" min="1" max="8760"
+        /></mat-form-field>
+        <label><input type="checkbox" formControlName="read" /> Consultar licencias</label>
+        <label><input type="checkbox" formControlName="activate" /> Activar licencias</label>
+        <label><input type="checkbox" formControlName="warnings" /> Consultar avisos</label>
+        <button mat-flat-button [disabled]="busy() || credentialForm.invalid" type="submit">
+          Emitir credencial
+        </button>
+      </form>
+      @if (secret()) {
+        <p>
+          Secreto mostrado solo ahora. Guárdalo en el gestor de secretos del backend antes de
+          cerrar.
+        </p>
+        <mat-form-field
+          ><mat-label>Secreto emitido</mat-label
+          ><textarea matInput readonly [value]="secret()"></textarea>
+        </mat-form-field>
+        <button mat-button (click)="secret.set('')">Ocultar secreto</button>
+      }
+    }
+    @if (panel() === 'features') {
+      <h3>Funciones Premium</h3>
       <p>
-        Secreto mostrado solo ahora. Guárdalo en el gestor de secretos del backend antes de cerrar.
+        Define las funciones que podrás incluir en las licencias. El código debe coincidir con el
+        que comprueba tu aplicación.
       </p>
-      <mat-form-field
-        ><mat-label>Secreto emitido</mat-label
-        ><textarea matInput readonly [value]="secret()"></textarea>
-      </mat-form-field>
-      <button mat-button (click)="secret.set('')">Ocultar secreto</button>
+      <button mat-button [disabled]="busy()" (click)="loadFeatures()">Actualizar catálogo</button>
+      @for (feature of features(); track feature.code) {
+        <p>
+          {{ feature.code }} · {{ feature.name }} · {{ feature.isActive ? 'Activa' : 'Inactiva' }}
+        </p>
+        <button mat-stroked-button [disabled]="busy()" (click)="editFeature(feature)">
+          Editar funcionalidad
+        </button>
+      }
+      @if (featureCursor()) {
+        <button mat-button [disabled]="busy()" (click)="loadFeatures(featureCursor())">
+          Más funcionalidades
+        </button>
+      }
+      <form #featureFormDirective="ngForm" [formGroup]="featureForm" (ngSubmit)="saveFeature()">
+        <mat-form-field
+          ><mat-label>Código inmutable</mat-label
+          ><input matInput formControlName="code" maxlength="64"
+        /></mat-form-field>
+        <mat-form-field
+          ><mat-label>Nombre</mat-label><input matInput formControlName="name" maxlength="120"
+        /></mat-form-field>
+        <label><input type="checkbox" formControlName="isActive" /> Funcionalidad activa</label>
+        <button mat-flat-button type="submit" [disabled]="busy() || featureForm.invalid">
+          Guardar funcionalidad
+        </button>
+        <button mat-button type="button" [disabled]="busy()" (click)="newFeature()">
+          Nueva funcionalidad
+        </button>
+      </form>
     }
-    <h3>Funcionalidades Premium</h3>
-    <button mat-button [disabled]="busy()" (click)="loadFeatures()">Actualizar catálogo</button>
-    @for (feature of features(); track feature.code) {
-      <p>
-        {{ feature.code }} · {{ feature.name }} · {{ feature.isActive ? 'Activa' : 'Inactiva' }}
-      </p>
-      <button mat-stroked-button [disabled]="busy()" (click)="editFeature(feature)">
-        Editar funcionalidad
-      </button>
-    }
-    @if (featureCursor()) {
-      <button mat-button [disabled]="busy()" (click)="loadFeatures(featureCursor())">
-        Más funcionalidades
-      </button>
-    }
-    <form #featureFormDirective="ngForm" [formGroup]="featureForm" (ngSubmit)="saveFeature()">
-      <mat-form-field
-        ><mat-label>Código inmutable</mat-label
-        ><input matInput formControlName="code" maxlength="64"
-      /></mat-form-field>
-      <mat-form-field
-        ><mat-label>Nombre</mat-label><input matInput formControlName="name" maxlength="120"
-      /></mat-form-field>
-      <label><input type="checkbox" formControlName="isActive" /> Funcionalidad activa</label>
-      <button mat-flat-button type="submit" [disabled]="busy() || featureForm.invalid">
-        Guardar funcionalidad
-      </button>
-      <button mat-button type="button" [disabled]="busy()" (click)="newFeature()">
-        Nueva funcionalidad
-      </button>
-    </form>
     @if (message()) {
       <p role="status">{{ message() }}</p>
     }
   `,
   styles: `
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+    [aria-current='page'] {
+      background: var(--mat-sys-secondary-container);
+    }
     form {
       display: grid;
       gap: 16px;
@@ -141,6 +175,35 @@ interface Page<T> {
   `,
 })
 export class ApplicationDetails {
+  protected readonly panel = signal<'features' | 'credentials'>('features');
+  protected changePanel(panel: 'features' | 'credentials') {
+    if (this.busy() || this.panel() === panel) return;
+    if (
+      this.secret() &&
+      !confirm(
+        '¿Guardaste la credencial? Al cambiar de pestaña se ocultará y no podrás recuperarla.',
+      )
+    )
+      return;
+    this.secret.set('');
+    this.panel.set(panel);
+    if (panel === 'features') this.loadFeatures();
+    else this.loadCredentials();
+  }
+
+  isWorking(): boolean {
+    return this.busy();
+  }
+  hasPendingWork(): boolean {
+    return (
+      this.busy() ||
+      this.credentialForm.dirty ||
+      this.featureForm.dirty ||
+      this.reason.dirty ||
+      !!this.secret()
+    );
+  }
+
   readonly applicationId = input.required<string>();
   private readonly http = inject(HttpClient);
   private readonly destroyRef = inject(DestroyRef);

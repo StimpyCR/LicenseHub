@@ -1,30 +1,37 @@
 <mat-toolbar>
   <img src="licensehub-mark.svg" alt="" width="36" height="36" />
-  <span class="brand">LicenseHub</span>
-  <span class="spacer"></span>
+  <span class="brand">LicenseHub</span><span class="spacer"></span>
   <button mat-button (click)="darkMode.set(!darkMode())" [attr.aria-pressed]="darkMode()">
     {{ darkMode() ? 'Modo claro' : 'Modo oscuro' }}
   </button>
 </mat-toolbar>
 <main>
   @if (updateReady()) {
-    <p role="status">
-      Hay una nueva versión. Guarda los códigos de licencia o credenciales recién emitidos y termina
-      tus formularios antes de recargar.
-    </p>
-    <button mat-stroked-button (click)="reloadVersion()">Recargar nueva versión</button>
-  }
-  <div class="eyebrow">ADMINISTRACIÓN PRIVADA</div>
-  <h1>Tus aplicaciones.<br />Un solo centro de licencias.</h1>
-  <p class="intro">Administra el acceso Premium de tus aplicaciones desde un espacio seguro.</p>
-  <div class="cards">
-    <mat-card appearance="outlined">
-      <mat-card-header
-        ><mat-card-title>Disponibilidad del servicio</mat-card-title></mat-card-header
+    <div class="update-banner" role="status">
+      Hay una nueva versión. Guarda los códigos y termina tus formularios antes de recargar.<button
+        mat-stroked-button
+        (click)="reloadVersion()"
       >
-      <mat-card-content>
-        <p class="status" role="status" aria-live="polite">
-          <span class="dot" [class.ready]="availability() === 'ready'"></span>
+        Recargar nueva versión
+      </button>
+    </div>
+  }
+  <div class="page-heading">
+    <div>
+      <div class="eyebrow">TU CENTRO DE LICENCIAS</div>
+      <h1>{{ signedIn() ? 'Panel de administración' : 'Bienvenido a LicenseHub' }}</h1>
+      <p class="intro">
+        {{
+          signedIn()
+            ? 'Elige una aplicación y administra sus clientes, licencias y pagos.'
+            : 'Inicia sesión para administrar tus aplicaciones y licencias.'
+        }}
+      </p>
+    </div>
+    <details class="connection-panel">
+      <summary>
+        <span class="dot" [class.ready]="availability() === 'ready'"></span
+        ><span role="status" aria-live="polite">
           @switch (availability()) {
             @case ('ready') {
               Servicio disponible
@@ -36,26 +43,22 @@
               Comprobando disponibilidad…
             }
           }
-        </p>
-        <p>Consulta la conexión actual antes de comenzar.</p>
-        <mat-slide-toggle [formControl]="autoRefresh">Actualizar cada 30 segundos</mat-slide-toggle>
-      </mat-card-content>
-      <mat-card-actions
-        ><button mat-stroked-button (click)="refresh()">Comprobar ahora</button></mat-card-actions
-      >
-    </mat-card>
-    <mat-card appearance="outlined">
-      <mat-card-header><mat-card-title>Acceso administrativo</mat-card-title></mat-card-header>
-      <mat-card-content>
-        <app-admin-login />
-
-        <p>
-          La gestión de aplicaciones, credenciales, funcionalidades y administradores está
-          disponible según tus permisos. Gestiona clientes, licencias, renovaciones, pagos manuales,
-          notificaciones e informes por aplicación.
-        </p>
-      </mat-card-content>
-    </mat-card>
+        </span>
+      </summary>
+      <div>
+        <p>Comprueba la conexión con el servidor.</p>
+        <mat-slide-toggle [formControl]="autoRefresh">Actualizar cada 30 segundos</mat-slide-toggle
+        ><button mat-button (click)="refresh()">Comprobar ahora</button>
+      </div>
+    </details>
   </div>
-  <footer>LicenseHub · Acceso administrativo privado</footer>
+  <section [class.access-card]="!signedIn()" aria-label="Acceso y administración">
+    @if (!signedIn()) {
+      <h2>Acceso administrativo</h2>
+    }
+    <app-admin-login (sessionChanged)="signedIn.set(!!$event)" />
+  </section>
+  <footer>
+    LicenseHub · Administración privada · Clientes y licencias separados por aplicación
+  </footer>
 </main>

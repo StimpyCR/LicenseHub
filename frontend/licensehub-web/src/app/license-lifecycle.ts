@@ -189,6 +189,13 @@ interface Activation {
   `,
 })
 export class LicenseLifecycle {
+  isWorking(): boolean {
+    return this.busy();
+  }
+  hasPendingWork(): boolean {
+    return this.busy() || this.form.dirty;
+  }
+
   readonly license = input.required<ManagedLicense>();
   private readonly http = inject(HttpClient);
   private readonly destroyRef = inject(DestroyRef);

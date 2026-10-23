@@ -1,10 +1,20 @@
-import { Component, DestroyRef, effect, inject, input, signal } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  effect,
+  inject,
+  input,
+  signal,
+  viewChild,
+  untracked,
+} from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatInputModule } from '@angular/material/input';
 import { finalize, switchMap, timeout } from 'rxjs';
 import { LicenseLifecycle, ManagedLicense } from './license-lifecycle';
@@ -41,194 +51,22 @@ interface Issued {
     MatButtonModule,
     MatFormFieldModule,
     MatInputModule,
+    MatCheckboxModule,
     LicenseLifecycle,
   ],
-  template: `
-    <h4>Clientes</h4>
-    <p>
-      El identificador de negocio lo determina el backend de la aplicación. No uses un ID elegido
-      por el navegador.
-    </p>
-    <mat-form-field
-      ><mat-label>Buscar cliente</mat-label
-      ><input matInput [formControl]="customerSearch" maxlength="120"
-    /></mat-form-field>
-    <button mat-button [disabled]="busy()" (click)="loadCustomers()">
-      Buscar / actualizar clientes
-    </button>
-    @for (customer of customers(); track customer.id) {
-      <p>
-        {{ customer.subjectId }} · {{ customer.displayName || 'Sin nombre' }} ·
-        {{ customer.email || 'Sin correo' }}
-      </p>
-      <button mat-button [disabled]="busy()" (click)="edit(customer)">Editar contacto</button>
-      <button
-        mat-button
-        [disabled]="busy()"
-        (click)="issueForm.controls.customerId.setValue(customer.id)"
-      >
-        Preasignar licencia
-      </button>
-    } @empty {
-      <p>No hay clientes cargados.</p>
-    }
-    @if (customerCursor()) {
-      <button mat-button [disabled]="busy()" (click)="loadCustomers(customerCursor())">
-        Clientes siguientes
-      </button>
-    }
-    <form [formGroup]="customerForm" (ngSubmit)="saveCustomer()">
-      <mat-form-field
-        ><mat-label>Identificador de negocio</mat-label
-        ><input matInput formControlName="subjectId" maxlength="128"
-      /></mat-form-field>
-      <mat-form-field
-        ><mat-label>Nombre del cliente</mat-label
-        ><input matInput formControlName="displayName" maxlength="200"
-      /></mat-form-field>
-      <mat-form-field
-        ><mat-label>Correo del cliente</mat-label
-        ><input matInput formControlName="email" type="email" maxlength="254"
-      /></mat-form-field>
-      <button mat-flat-button [disabled]="busy() || customerForm.invalid" type="submit">
-        {{ selectedCustomer() ? 'Guardar contacto' : 'Registrar cliente' }}
-      </button>
-      <button mat-button [disabled]="busy()" type="button" (click)="newCustomer()">
-        Nuevo cliente
-      </button>
-    </form>
-
-    <h4>Emitir licencias</h4>
-    <p>
-      Los códigos completos se muestran una sola vez. Un reintento confirma la emisión sin
-      recuperarlos. Guarda los códigos antes de ocultarlos.
-    </p>
-    <form [formGroup]="issueForm" (ngSubmit)="issue()">
-      <mat-form-field
-        ><mat-label>Cantidad (1–100)</mat-label
-        ><input matInput type="number" formControlName="quantity" min="1" max="100"
-      /></mat-form-field>
-      <mat-form-field
-        ><mat-label>Inicio de vigencia</mat-label
-        ><select matNativeControl formControlName="startMode">
-          <option value="OnActivation">Al activar</option>
-          <option value="OnIssue">Al emitir</option>
-        </select></mat-form-field
-      >
-      <mat-form-field
-        ><mat-label>Tipo de vigencia</mat-label
-        ><select matNativeControl formControlName="kind">
-          <option value="Duration">Duración</option>
-          <option value="Until">Fecha específica</option>
-          <option value="Lifetime">Vitalicia</option>
-        </select></mat-form-field
-      >
-      @if (issueForm.controls.kind.value === 'Duration') {
-        <mat-form-field
-          ><mat-label>Duración</mat-label
-          ><input matInput formControlName="value" type="number" min="1" max="1000000"
-        /></mat-form-field>
-        <mat-form-field
-          ><mat-label>Unidad</mat-label
-          ><select matNativeControl formControlName="unit">
-            <option value="Minute">Minutos</option>
-            <option value="Hour">Horas</option>
-            <option value="Day">Días</option>
-            <option value="Month">Meses calendario</option>
-            <option value="Year">Años calendario</option>
-          </select></mat-form-field
-        >
-      }
-      @if (issueForm.controls.kind.value === 'Until') {
-        <mat-form-field
-          ><mat-label>Fecha de vencimiento local</mat-label
-          ><input matInput formControlName="until" type="datetime-local" /><mat-hint
-            >Se envía en UTC. Requiere inicio al emitir.</mat-hint
-          ></mat-form-field
-        >
-      }
-      <mat-form-field
-        ><mat-label>Cliente preasignado (UUID opcional)</mat-label
-        ><input matInput formControlName="customerId" /><mat-hint
-          >Preasignación admite una licencia por emisión.</mat-hint
-        ></mat-form-field
-      >
-      <mat-form-field
-        ><mat-label>Códigos de funcionalidades, separados por coma</mat-label
-        ><input matInput formControlName="features" maxlength="6500" /><mat-hint
-          >Solo códigos activos del catálogo de esta aplicación.</mat-hint
-        ></mat-form-field
-      >
-      <button mat-flat-button [disabled]="busy() || issueForm.invalid" type="submit">
-        Emitir licencias
-      </button>
-      <button mat-button [disabled]="busy()" type="button" (click)="newIssue()">
-        Preparar otra emisión
-      </button>
-    </form>
-    @if (issued(); as batch) {
-      <p>
-        {{
-          batch.codesRecoverable
-            ? 'Emisión completada. Códigos disponibles temporalmente.'
-            : 'Emisión ya registrada; los códigos no son recuperables.'
-        }}
-      </p>
-      @for (item of batch.items; track item.license.id) {
-        <p class="identifier">Licencia {{ item.license.id }} · {{ item.license.state }}</p>
-        @if (item.licenseKey) {
-          <mat-form-field
-            ><mat-label>Código de licencia {{ $index + 1 }}</mat-label
-            ><input matInput readonly autocomplete="off" [value]="item.licenseKey"
-          /></mat-form-field>
-        }
-      }
-      <button mat-stroked-button (click)="issued.set(null)">Ocultar códigos</button>
-    }
-
-    <h4>Licencias de la aplicación</h4>
-    <mat-form-field
-      ><mat-label>Filtrar estado</mat-label
-      ><select matNativeControl [formControl]="state">
-        <option value="">Todos</option>
-        @for (value of states; track value) {
-          <option [value]="value">{{ value }}</option>
-        }
-      </select></mat-form-field
-    >
-    <button mat-button [disabled]="busy()" (click)="loadLicenses()">Consultar licencias</button>
-    @for (license of licenses(); track license.id) {
-      <p class="identifier">{{ license.id }} · {{ license.state }}</p>
-      <p>
-        {{
-          license.isLifetime
-            ? 'Vitalicia'
-            : 'Vencimiento: ' + ((license.expiresAt | date: 'medium') || 'Comienza al activar')
-        }}
-      </p>
-      <p>Funcionalidades: {{ license.features.join(', ') || 'Ninguna' }}</p>
-      <button mat-button [disabled]="busy()" (click)="managed.set(license)">
-        Administrar esta licencia
-      </button>
-    } @empty {
-      <p>No hay licencias cargadas.</p>
-    }
-    @if (licenseCursor()) {
-      <button mat-button [disabled]="busy()" (click)="loadLicenses(licenseCursor())">
-        Licencias siguientes
-      </button>
-    }
-    @for (item of managed() ? [managed()!] : []; track item.id) {
-      <button mat-button (click)="managed.set(null)">Cerrar administración de licencia</button>
-      @defer (on immediate) {
-        <app-license-lifecycle [license]="item" />
-      }
-    }
-    @if (message()) {
-      <p role="status">{{ message() }}</p>
-    }
-  `,
+  templateUrl: './license-manager.html',
   styles: `
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0 0 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--mat-sys-outline-variant);
+    }
+    [aria-current='page'] {
+      background: var(--mat-sys-secondary-container);
+    }
     form {
       display: grid;
       gap: 12px;
@@ -249,8 +87,115 @@ interface Issued {
 })
 export class LicenseManager {
   readonly applicationId = input.required<string>();
+  readonly initialTab = input<'licenses' | 'customers' | 'issue'>('licenses');
+  protected readonly tab = signal<'licenses' | 'customers' | 'issue'>('licenses');
+  private readonly lifecycle = viewChild<LicenseLifecycle>('lifecycle');
+  isWorking() {
+    return this.busy() || !!this.lifecycle()?.isWorking();
+  }
+  hasPendingWork() {
+    return (
+      this.isWorking() ||
+      this.customerForm.dirty ||
+      this.issueForm.dirty ||
+      !!this.issued() ||
+      !!this.lifecycle()?.hasPendingWork()
+    );
+  }
+  protected stateLabel(state: string) {
+    return (
+      (
+        {
+          Pending: 'Pendiente',
+          Active: 'Activa',
+          Suspended: 'Suspendida',
+          Expired: 'Vencida',
+          Revoked: 'Revocada',
+          Cancelled: 'Cancelada',
+        } as Record<string, string>
+      )[state] ?? state
+    );
+  }
+  protected openTab(tab: 'licenses' | 'customers' | 'issue') {
+    if (this.isWorking() || this.tab() === tab) return;
+    if (
+      this.lifecycle()?.hasPendingWork() &&
+      !confirm('Hay cambios de licencia sin guardar. ¿Quieres cambiar de pestaña?')
+    )
+      return;
+    if (
+      this.tab() === 'issue' &&
+      this.issued() &&
+      !confirm('¿Ya guardaste los códigos? Al salir se ocultarán y no podrás recuperarlos.')
+    )
+      return;
+    if (this.tab() === 'issue') this.issued.set(null);
+    this.tab.set(tab);
+    if (tab === 'licenses') this.loadLicenses();
+    else if (tab === 'customers' || !this.customers().length) this.loadCustomers();
+  }
+  protected manage(license: License | null) {
+    if (this.isWorking()) return;
+    if (
+      this.lifecycle()?.hasPendingWork() &&
+      !confirm('Hay cambios de licencia sin guardar. ¿Quieres salir?')
+    )
+      return;
+    this.managed.set(license);
+  }
+  protected assignCustomer(customer: Customer) {
+    if (this.isWorking()) return;
+    this.openTab('issue');
+    if (this.tab() !== 'issue') return;
+    this.issueForm.patchValue({ customerId: customer.id, quantity: 1 });
+    this.issueForm.markAsDirty();
+  }
+  protected hideCodes() {
+    if (confirm('¿Guardaste todos los códigos? No podrás recuperarlos después.'))
+      this.issued.set(null);
+  }
+
   private readonly http = inject(HttpClient);
   private readonly destroyRef = inject(DestroyRef);
+  protected readonly catalog = signal<{ code: string; name: string; isActive: boolean }[]>([]);
+  protected readonly catalogMessage = signal('');
+  protected featureSelected(code: string) {
+    return this.issueForm.controls.features.value
+      .split(',')
+      .map((x) => x.trim())
+      .includes(code);
+  }
+  protected toggleFeature(code: string, checked: boolean) {
+    const codes = this.issueForm.controls.features.value
+      .split(',')
+      .map((x) => x.trim())
+      .filter((x) => !!x && x !== code);
+    if (checked) codes.push(code);
+    this.issueForm.controls.features.setValue(codes.join(', '));
+    this.issueForm.controls.features.markAsDirty();
+  }
+  protected loadCatalog() {
+    this.http
+      .get<Page<{ code: string; name: string; isActive: boolean }>>(
+        '/api/v1/admin/applications/' + this.applicationId() + '/features',
+        { params: { pageSize: 100 } },
+      )
+      .pipe(timeout(10000), takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (p) => {
+          this.catalog.set(p.items.filter((x) => x.isActive));
+          this.catalogMessage.set(
+            p.nextCursor
+              ? 'Se muestran las primeras funciones; puedes introducir otros códigos activos en Opciones avanzadas.'
+              : '',
+          );
+        },
+        error: () =>
+          this.catalogMessage.set(
+            'No se pudo cargar el catálogo. Revisa Conexión y funciones o introduce los códigos en Opciones avanzadas.',
+          ),
+      });
+  }
   protected readonly customers = signal<Customer[]>([]);
   protected readonly licenses = signal<License[]>([]);
   protected readonly customerCursor = signal<string | null>(null);
@@ -282,11 +227,11 @@ export class LicenseManager {
     }),
     startMode: new FormControl('OnActivation', { nonNullable: true }),
     kind: new FormControl('Duration', { nonNullable: true }),
-    value: new FormControl(2, {
+    value: new FormControl(30, {
       nonNullable: true,
       validators: [Validators.required, Validators.min(1), Validators.max(1000000)],
     }),
-    unit: new FormControl('Minute', { nonNullable: true }),
+    unit: new FormControl('Day', { nonNullable: true }),
     until: new FormControl('', { nonNullable: true }),
     customerId: new FormControl('', { nonNullable: true }),
     features: new FormControl('', { nonNullable: true }),
@@ -310,13 +255,17 @@ export class LicenseManager {
         quantity: 1,
         startMode: 'OnActivation',
         kind: 'Duration',
-        value: 2,
-        unit: 'Minute',
+        value: 30,
+        unit: 'Day',
         until: '',
         customerId: '',
         features: '',
       });
       this.message.set('');
+      const tab = this.initialTab();
+      this.tab.set(tab);
+      untracked(() => this.loadCatalog());
+      untracked(() => (tab === 'licenses' ? this.loadLicenses() : this.loadCustomers()));
     });
     this.destroyRef.onDestroy(() => this.issued.set(null));
   }
@@ -435,6 +384,11 @@ export class LicenseManager {
   }
   protected issue() {
     if (this.busy() || this.issueForm.invalid) return;
+    if (
+      this.issued() &&
+      !confirm('¿Ya guardaste los códigos anteriores? Este envío ocultará los códigos visibles.')
+    )
+      return;
     const value = this.issueForm.getRawValue();
     if (
       value.kind === 'Until' &&
@@ -484,6 +438,7 @@ export class LicenseManager {
       .subscribe({
         next: (batch) => {
           this.issued.set(batch);
+          this.issueForm.markAsPristine();
           this.message.set(
             'Operación confirmada. Guarda los códigos antes de preparar otra emisión.',
           );
@@ -492,6 +447,11 @@ export class LicenseManager {
       });
   }
   protected newIssue() {
+    if (
+      this.busy() ||
+      (this.issued() && !confirm('¿Ya guardaste los códigos? No podrás recuperarlos después.'))
+    )
+      return;
     this.issued.set(null);
     this.issueIntent = null;
     this.message.set('Nueva emisión preparada. El siguiente envío creará otro lote.');

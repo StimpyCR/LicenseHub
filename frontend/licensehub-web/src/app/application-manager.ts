@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, input, signal, viewChild } from '@angular/core';
+import { Component, DestroyRef, computed, inject, input, signal, viewChild } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
@@ -27,6 +27,9 @@ interface ApplicationView {
   etag: string;
 }
 
+type WorkspaceSection =
+  'overview' | 'licenses' | 'payments' | 'notifications' | 'integration' | 'reports';
+
 @Component({
   selector: 'app-application-manager',
   imports: [
@@ -41,108 +44,29 @@ interface ApplicationView {
     NotificationManager,
     AdminReports,
   ],
-  template: `
-    <h3>Aplicaciones</h3>
-    <button mat-button [disabled]="busy()" (click)="load()">Actualizar lista</button>
-    @for (app of applications(); track app.id) {
-      <p>{{ app.name }} · {{ app.slug }} · {{ app.isActive ? 'Activa' : 'Inactiva' }}</p>
-      <button mat-button [disabled]="busy()" (click)="reports.set(app)">
-        Dashboard y auditoría
-      </button>
-      <button mat-button [disabled]="busy()" (click)="details.set(app)">
-        Credenciales y funcionalidades
-      </button>
-      <button mat-button [disabled]="busy()" (click)="licensing.set(app)">
-        Clientes y licencias
-      </button>
-      <button mat-button [disabled]="busy()" (click)="billing.set(app)">Pagos manuales</button>
-      <button mat-button [disabled]="busy()" (click)="notifications.set(app)">
-        Notificaciones
-      </button>
-      @if (canManage()) {
-        <button mat-stroked-button [disabled]="busy()" (click)="edit(app)">Editar</button>
-      }
-    } @empty {
-      <p>No hay aplicaciones en esta página.</p>
-    }
-    @if (cursor()) {
-      <button mat-button [disabled]="busy()" (click)="load(cursor())">Página siguiente</button>
-    }
-    @if (canManage()) {
-      <h3>{{ selected() ? 'Editar aplicación' : 'Registrar aplicación' }}</h3>
-      <form #applicationFormDirective="ngForm" [formGroup]="form" (ngSubmit)="save()">
-        <mat-form-field
-          ><mat-label>Nombre</mat-label><input matInput formControlName="name" maxlength="120"
-        /></mat-form-field>
-        <mat-form-field
-          ><mat-label>Identificador (slug)</mat-label
-          ><input matInput formControlName="slug" maxlength="64" />
-          <mat-hint>Minúsculas, números y guiones; no cambia después de crear.</mat-hint>
-        </mat-form-field>
-        <mat-checkbox formControlName="isActive">Aplicación activa</mat-checkbox>
-        <p>Desactivarla impide autenticar sus integraciones.</p>
-        <button mat-flat-button type="submit" [disabled]="busy() || form.invalid">Guardar</button>
-        <button mat-button type="button" [disabled]="busy()" (click)="reset()">
-          Nueva aplicación
-        </button>
-      </form>
-    }
-    @if (message()) {
-      <p role="status">{{ message() }}</p>
-    }
-    @for (app of reports() ? [reports()!] : []; track app.id) {
-      <h3>Informes · {{ app.name }}</h3>
-      <button mat-button (click)="reports.set(null)">Cerrar informes</button>
-      @defer (on immediate) {
-        <app-admin-reports [applicationId]="app.id" />
-      }
-    }
-    @if (details(); as app) {
-      <h3>{{ app.name }}</h3>
-      <button mat-button (click)="details.set(null)">Cerrar detalles</button>
-      @defer (on immediate) {
-        <app-application-details [applicationId]="app.id" />
-      }
-    }
-    @for (app of licensing() ? [licensing()!] : []; track app.id) {
-      <h3>Clientes y licencias · {{ app.name }}</h3>
-      <button mat-button (click)="licensing.set(null)">Cerrar clientes y licencias</button>
-      @defer (on immediate) {
-        <app-license-manager [applicationId]="app.id" />
-      }
-    }
-    @for (app of billing() ? [billing()!] : []; track app.id) {
-      <h3>Pagos · {{ app.name }}</h3>
-      <button mat-button (click)="billing.set(null)">Cerrar pagos</button>
-      @defer (on immediate) {
-        <app-payment-manager [applicationId]="app.id" />
-      }
-    }
-    @for (app of notifications() ? [notifications()!] : []; track app.id) {
-      <h3>Notificaciones · {{ app.name }}</h3>
-      <button mat-button (click)="notifications.set(null)">Cerrar notificaciones</button>
-      @defer (on immediate) {
-        <app-notification-manager [applicationId]="app.id" />
-      }
-    }
-  `,
-  styles: `
-    form {
-      display: grid;
-      gap: 16px;
-      margin-top: 16px;
-    }
-    mat-form-field {
-      width: 100%;
-      min-width: 0;
-    }
-  `,
+  templateUrl: './application-manager.html',
+  styleUrl: './application-manager.scss',
 })
 export class ApplicationManager {
-  protected readonly reports = signal<ApplicationView | null>(null);
-  protected readonly notifications = signal<ApplicationView | null>(null);
-  protected readonly billing = signal<ApplicationView | null>(null);
-  protected readonly licensing = signal<ApplicationView | null>(null);
+  protected readonly workspace = signal<ApplicationView | null>(null);
+  protected readonly section = signal<WorkspaceSection>('overview');
+  protected readonly licenseTab = signal<'licenses' | 'customers' | 'issue'>('licenses');
+  protected readonly showEditor = signal(false);
+  protected readonly query = signal('');
+  protected readonly loading = signal(false);
+  protected readonly onLaterPage = signal(false);
+  private readonly licenseComponent = viewChild<LicenseManager>('licenseManager');
+  private readonly integrationComponent = viewChild<ApplicationDetails>('integrationDetails');
+  private readonly paymentComponent = viewChild<PaymentManager>('paymentManager');
+  private readonly notificationComponent = viewChild<NotificationManager>('notificationManager');
+  protected readonly sections: { id: WorkspaceSection; label: string }[] = [
+    { id: 'overview', label: 'Inicio' },
+    { id: 'licenses', label: 'Clientes y licencias' },
+    { id: 'payments', label: 'Pagos' },
+    { id: 'notifications', label: 'Correos y avisos' },
+    { id: 'integration', label: 'Conexión y funciones' },
+    { id: 'reports', label: 'Informes' },
+  ];
   readonly canManage = input(false);
   private readonly http = inject(HttpClient);
   private readonly destroyRef = inject(DestroyRef);
@@ -150,7 +74,12 @@ export class ApplicationManager {
     'applicationFormDirective',
   );
   protected readonly applications = signal<ApplicationView[]>([]);
-  protected readonly details = signal<ApplicationView | null>(null);
+  protected readonly visibleApplications = computed(() => {
+    const query = this.query().trim().toLocaleLowerCase();
+    return this.applications().filter((app) =>
+      (app.name + ' ' + app.slug).toLocaleLowerCase().includes(query),
+    );
+  });
   protected readonly cursor = signal<string | null>(null);
   protected readonly selected = signal<ApplicationView | null>(null);
   protected readonly busy = signal(false);
@@ -159,7 +88,7 @@ export class ApplicationManager {
   protected readonly form = new FormGroup({
     name: new FormControl('', {
       nonNullable: true,
-      validators: [Validators.required, Validators.maxLength(120)],
+      validators: [Validators.required, Validators.maxLength(120), Validators.pattern(/\S/)],
     }),
     slug: new FormControl('', {
       nonNullable: true,
@@ -168,34 +97,117 @@ export class ApplicationManager {
     isActive: new FormControl(true, { nonNullable: true }),
   });
   constructor() {
+    this.form.controls.name.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((name) => {
+        if (!this.selected() && this.form.controls.slug.pristine) {
+          let slug = name
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '');
+          if (/^[0-9]/.test(slug)) slug = 'app-' + slug;
+          this.form.controls.slug.setValue(slug.slice(0, 64).replace(/-+$/g, ''), {
+            emitEvent: false,
+          });
+        }
+      });
     this.load();
   }
+  private children() {
+    return [
+      this.licenseComponent(),
+      this.integrationComponent(),
+      this.paymentComponent(),
+      this.notificationComponent(),
+    ];
+  }
+  hasPendingWork(): boolean {
+    return (
+      this.busy() ||
+      (this.showEditor() && this.form.dirty) ||
+      this.children().some((child) => child?.hasPendingWork())
+    );
+  }
+  canLeave(): boolean {
+    if (this.busy() || this.children().some((child) => child?.isWorking())) {
+      this.message.set('Espera a que termine la operación antes de cambiar de sección.');
+      return false;
+    }
+    return (
+      !this.hasPendingWork() ||
+      window.confirm(
+        'Hay cambios sin guardar o códigos que solo se muestran una vez. Guárdalos antes de salir. ¿Quieres salir de todos modos?',
+      )
+    );
+  }
+  protected open(app: ApplicationView) {
+    if (!this.canLeave()) return;
+    this.reset();
+    this.workspace.set(app);
+    this.section.set('overview');
+    this.message.set('');
+  }
+  protected backToApplications() {
+    if (!this.canLeave()) return;
+    this.reset();
+    this.workspace.set(null);
+    this.message.set('');
+  }
+  protected navigate(section: WorkspaceSection) {
+    if (this.section() === section && !this.showEditor()) return;
+    if (!this.canLeave()) return;
+    this.reset();
+    this.section.set(section);
+    this.message.set('');
+  }
+  protected openLicenses(tab: 'licenses' | 'customers' | 'issue') {
+    this.licenseTab.set(tab);
+    this.navigate('licenses');
+  }
+  protected startCreate() {
+    if (!this.canLeave()) return;
+    this.reset();
+    this.showEditor.set(true);
+    this.message.set('');
+  }
+  protected cancelEditor() {
+    if (this.canLeave()) this.reset();
+  }
+
   protected load(cursor: string | null = null) {
-    this.busy.set(true);
+    if (this.loading()) return;
+    this.loading.set(true);
     this.http
       .get<{ items: ApplicationView[]; nextCursor: string | null }>('/api/v1/admin/applications', {
         params: cursor ? { cursor } : {},
       })
       .pipe(
         timeout(10000),
-        finalize(() => this.busy.set(false)),
+        finalize(() => this.loading.set(false)),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
         next: (page) => {
           this.applications.set(page.items);
+          this.onLaterPage.set(!!cursor);
           this.cursor.set(page.nextCursor);
         },
         error: () => this.message.set('No se pudo consultar la lista. Comprueba tu sesión.'),
       });
   }
   protected edit(app: ApplicationView) {
+    if (!this.canLeave()) return;
+    this.showEditor.set(true);
+    this.message.set('');
     this.selected.set(app);
     this.form.setValue({ name: app.name, slug: app.slug, isActive: app.isActive });
     this.form.controls.slug.disable();
     this.attempt = null;
   }
   protected reset() {
+    this.showEditor.set(false);
     this.selected.set(null);
     this.form.controls.slug.enable();
     const values = { name: '', slug: '', isActive: true };
@@ -235,7 +247,8 @@ export class ApplicationManager {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
-        next: () => {
+        next: (saved) => {
+          if (this.workspace()?.id === saved.id) this.workspace.set(saved);
           this.reset();
           this.message.set('Aplicación guardada.');
           this.load();
@@ -244,7 +257,9 @@ export class ApplicationManager {
           this.message.set(
             error.status === 412
               ? 'La aplicación cambió. Actualiza la lista y vuelve a editar.'
-              : 'No se pudo guardar. Reintenta los mismos datos o comprueba tus permisos.',
+              : error.status === 409
+                ? 'No se pudo crear: ese identificador puede estar reservado. Prueba con otro o actualiza la lista.'
+                : 'No se pudo guardar. Reintenta los mismos datos o comprueba tus permisos.',
           ),
       });
   }
